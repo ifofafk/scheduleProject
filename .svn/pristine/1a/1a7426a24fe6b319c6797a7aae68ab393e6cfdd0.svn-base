@@ -1,0 +1,11 @@
+package com.zngk.service;
+
+import com.zngk.dto.YjcxDto;
+import com.zngk.entity.PagePublicData;
+import com.zngk.entity.User;
+
+public interface YjcxService {
+
+	PagePublicData queryYjxxList(YjcxDto yjcxDto,User user);
+
+}

@@ -1,0 +1,1009 @@
+package com.zngk.service.impl;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.annotation.Resource;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.InsertDataToFhUtils;
+import com.zngk.common.constant.rybk.RybkEmun;
+import com.zngk.dao.RedListDao;
+import com.zngk.dao.RybkDao;
+import com.zngk.dto.BatchEntityDTO;
+import com.zngk.dto.BkBatchSaveDTO;
+import com.zngk.dto.BkDTO;
+import com.zngk.entity.ExcelEntity;
+import com.zngk.entity.ExcelFailEntity;
+import com.zngk.entity.InsertDataToFh;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.RybkService;
+import com.zngk.util.PubMethod;
+import com.zngk.util.StringUtil;
+import com.zngk.util.ValidationUtils;
+
+@Service
+@Transactional
+public class RybkServiceImpl implements RybkService {
+
+	@Autowired
+	private RybkDao rybkDao;
+	
+	@Autowired
+	private RedListDao redListDao;
+	
+	@Autowired
+	private InsertDataToFhUtils insertDataToFhUtils;
+
+
+	@Resource(name="jdbcTemplate")
+    private JdbcTemplate jdbcTemplate;
+	
+	@Override
+	public void save(String sfzh, String userName, String jySfzh, String jh) {
+		rybkDao.save(sfzh, userName, jySfzh, jh);
+	}
+
+	@Override
+	public Map<String,Object> selectPerson(String sfzh) {
+		return rybkDao.selectPersons(sfzh);
+	}
+	
+	/**
+	 * 地图圈点布控
+	 * @param request  表单所有参数
+	 * @param httpSession
+	 * @author WangChen
+	 * @throws Exception
+	 */
+	@Override
+	public void RequestMap(User userinfo, BkDTO data) throws Exception {
+
+		//获取到插入人员的一些信息
+		//把生成的编号赋值给项目编号字段
+		String zkno = PubMethod.getUUID("zkno_");
+		
+    	// 当前用户信息
+    	String sqrjh = userinfo.getAccount();//申请人警号
+    	String sqrxm = userinfo.getName();//申请人姓名
+    	String sqrdwdm = userinfo.getDepartmentCode();//申请人单位代码
+    	String sqrdwmc = userinfo.getDepartmentName();//申请人单位名称
+    	//被布控人的信息
+		String username = data.getUserName();//姓名
+		String usercard = data.getSfzh().toUpperCase();//身份证号
+		String hjd = data.getHjd();//户籍地
+		
+		//红名单判断
+		boolean inOrNotRedList = redListDao.queryInRedListBySfzh(usercard);
+		if(inOrNotRedList){
+			throw new ServiceException(RybkEmun.RYBK_ERROR_INREDLIST.getCode(),RybkEmun.RYBK_ERROR_INREDLIST.getDesc());
+		}
+		
+		String rylx = "99";//其他
+		if(StringUtils.isNotBlank(data.getRylx())) {
+			rylx= data.getRylx();//人员类型
+		}
+		String startTime = data.getStartTime();//开始的时间
+		String endTime = data.getEndTime();//结束的时间
+		String zyfw = data.getZyfw() != null? data.getZyfw() : "";//资源范围
+		String zyfwStr = "";
+		String dyfw = data.getDyfw() != null? data.getDyfw() : "";//地域范围（仅针对火车飞机(民航)）
+		String dyfwStr = "";
+		String wbdyfw = data.getWbdyfw();//网吧地域范围
+		String lvdyfw = data.getLvdyfw();//旅店地域范围
+		String wangba = "";
+		String lvdian = "";
+		//ZNGK 2.0 资源范围为飞机4时包含民航订座民航进港
+		if(StringUtils.isNotBlank(zyfw)) {
+			zyfwStr = zyfw;
+			if(zyfw.contains("4")){
+				zyfwStr = zyfw + "_5_";
+			}
+		}
+		if(StringUtils.isNotBlank(dyfw)) {
+			dyfwStr = dyfw;
+		}
+		
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("1")) && StringUtils.isNotBlank(wbdyfw)) {
+			wangba = wbdyfw;
+		}
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("2")) && StringUtils.isNotBlank(lvdyfw)) {
+			lvdian = lvdyfw;
+		}
+		if(StringUtils.isBlank(wangba)){
+			wangba = "";
+		}
+		if(StringUtils.isBlank(lvdian)){
+			lvdian = "";
+		}
+		String bkyy = data.getBkyy();//布控原因
+		
+		//***接收人信息，如果不填默认为当前用户
+		//导入操作编号
+		String drczno = PubMethod.getUUID("drczno_");
+		
+		//接收人警号
+		String jsrjh = userinfo.getAccount();
+		if(StringUtils.isNotBlank(data.getJsrjh())){
+			jsrjh = data.getJsrjh();
+		}
+		//接收人姓名
+		String jsrxm = userinfo.getName();
+		if(StringUtils.isNotBlank(data.getJsrxm())){
+			jsrxm = data.getJsrxm();
+		}
+		//接收人手机
+		String jsrsj = userinfo.getSj();
+		if(StringUtils.isNotBlank(data.getJsrsjh())){
+			jsrsj = data.getJsrsjh();
+		}
+		
+		Map<String,String> params = new HashMap<String,String>();
+		
+		params.put("zkno", zkno);
+		params.put("sqrjh", sqrjh);
+		params.put("sqrxm", sqrxm);
+		params.put("sqrdwdm", sqrdwdm);
+		params.put("sqrdwmc", sqrdwmc);
+		params.put("username", username);
+		params.put("usercard", usercard);
+		params.put("personnel", rylx);
+		params.put("startTime", startTime);
+		params.put("endTime", endTime);
+		params.put("zyfw", zyfwStr);
+		params.put("dyfw", dyfwStr);
+		params.put("wangba", wangba);
+		params.put("lvdian", lvdian);
+		params.put("bkyy", bkyy);
+		params.put("drczno", drczno);
+		params.put("jsrjh", jsrjh);
+		params.put("jsrxm", jsrxm);
+		params.put("jsrsj", jsrsj);
+		
+		params.put("ip", userinfo.getIp());
+		params.put("hjd", hjd);
+		params.put("jkFlag", data.getJkFlag()+"");//外部接口调用标识
+		
+		//0 保存人员信息表
+		rybkDao.insertRyxxb(params,userinfo);
+	    
+	    //1 保存布控人员信息
+		rybkDao.insertZkry(params);
+	    
+	    //2 保存人员基本信息
+		rybkDao.insertRyjbxx(params);
+	    
+	    //3 保存信息接收人
+		rybkDao.insertXxjsr(params);	
+		
+		
+		//插入烽火数据库只要是接口调用就不需要审批. 已经布控的插入烽火库
+		if(!userinfo.getRoleList().contains("PTYH")) {
+			InsertDataToFh insertDataToFh = new InsertDataToFh();
+			
+			insertDataToFh.setTydic_dynamic_id(zkno);//存入智控id
+			insertDataToFh.setDispositionCategory(1);//'布控类别(1.人2.机动车3.WIFI)',
+			insertDataToFh.setTargetFeature_SFZHM(usercard);//布控对象特征_人员身份证',
+			insertDataToFh.setTargetFeature_XM(username);//'布控对象特征_人员姓名',
+			
+			insertDataToFh.setApplicantName(sqrxm);//申请人姓名
+			if(StringUtils.isNotBlank(userinfo.getSj()) && !"null".equals(userinfo.getSj())){
+				insertDataToFh.setApplicantInfo(userinfo.getSj()); //'申请人联系方式', 暂时给的是当前用户手机号(疑问，接口用户，sj号为空)
+			}
+			insertDataToFh.setApplicantOrg(sqrdwmc);//'申请单位'  //是单位名称还是单位代码
+			insertDataToFh.setBeginTime(startTime);//'开始时间',
+			insertDataToFh.setEndTime(endTime);//'结束时间',
+			insertDataToFh.setReceiveMobile(jsrsj);//'告警信息接收手机号(可填写多个手机号，用分隔符隔开)',
+			insertDataToFh.setReason(bkyy);//'布控原因',
+			
+			insertDataToFhUtils.insertData(insertDataToFh);
+		}
+				
+		
+	}
+	
+	@Override
+	public UserCenterPage queryListZkryxx(String drczno, Integer pageNum, Integer pageSize){
+
+        UserCenterPage userCenterPage= rybkDao.pageList(drczno, pageNum, pageSize);
+        
+    	return userCenterPage;
+        
+    }
+
+	
+	
+	/**
+	 * 批量更新人员智控信息的参数
+	 * @param request
+	 * @return
+	 */
+	public String[] zkjbxxParam(BkDTO bkDTO)
+	{
+		//人员智控开始时间
+		String ryzkkssj = bkDTO.getStartTime();
+		//人员结束开始时间
+		String ryzkjssj = bkDTO.getEndTime();
+		//布控原因
+		String bkyy = bkDTO.getBkyy();
+		//资源范围
+		String zyfw = bkDTO.getZyfw();
+		String zyfwStr = "";
+		//ZNGK 2.0 资源范围为飞机4时包含民航订座民航进港
+
+		if(StringUtils.isNotBlank(zyfw)) {
+			zyfwStr = zyfw;
+			if(zyfw.contains("4")){
+				zyfwStr = zyfw + "_5_";
+			}
+		}
+				
+		//人员类型
+		String rylx = "99";//其他
+		if(StringUtils.isNotBlank(bkDTO.getRylx())) {
+			rylx= bkDTO.getRylx();//人员类型
+		}
+		
+		//地域范围
+		String dyfw = bkDTO.getDyfw();//先让前端转一下为 _连接
+		String dyfwStr = "";
+
+		if(StringUtils.isNotBlank(dyfw)) {
+			dyfwStr = dyfw;
+		}
+		
+		//网吧和旅店
+		String wbdyfw = bkDTO.getWbdyfw();//网吧地域范围
+		String lvdyfw = bkDTO.getLvdyfw();//旅店地域范围
+		String wangba = "";
+		String lvdian = "";
+		if((StringUtils.isNotBlank(zyfw) && zyfw.contains("1")) && StringUtils.isNotBlank(wbdyfw)){
+			String[] wangbaIds = wbdyfw.split(",");
+			for(String one : wangbaIds) {
+				if(StringUtils.isNotBlank(one)){
+					wangba = wangba + one + "_";
+				}
+			}
+		}
+		
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("1")) && StringUtils.isNotBlank(wbdyfw)) {
+			wangba = wbdyfw;
+		}
+
+		
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("2")) && StringUtils.isNotBlank(lvdyfw)) {
+			lvdian = lvdyfw;
+		}
+
+		
+		//导入编号
+		String drczno = bkDTO.getDrczno();
+		
+		String[] param = new String[]{ryzkkssj,ryzkjssj,zyfwStr,dyfwStr,bkyy,rylx,wangba,lvdian,drczno};
+		return param;
+	}
+	
+	
+	/**
+	 * 批量插入信息接收人的参数组装
+	 * @param request
+	 * @return
+	 */
+	public String[] getCzryParam(BkBatchSaveDTO bkBatchSaveDTO, User userinfo){
+
+		//导入操作编号
+		String drczno = bkBatchSaveDTO.getDrczno();
+		
+		//接收人警号
+		String jsrjh = userinfo.getAccount();
+		if(StringUtils.isNotBlank(bkBatchSaveDTO.getJsrjh())){
+			jsrjh = bkBatchSaveDTO.getJsrjh();
+		}
+		//接收人姓名
+		String jsrxm = userinfo.getName();
+		if(StringUtils.isNotBlank(bkBatchSaveDTO.getJsrxm())){
+			jsrxm = bkBatchSaveDTO.getJsrxm();
+		}
+		//接收人手机
+		String jsrsjh = userinfo.getSj();
+		if(StringUtils.isNotBlank(bkBatchSaveDTO.getJsrsjh())){
+			jsrsjh = bkBatchSaveDTO.getJsrsjh();
+		}
+		
+		String[] params = new String[]{jsrjh,jsrxm,jsrsjh,drczno};
+		
+		return params;
+	}
+	
+////////////////////////////////////////////////////////////////////////////////////
+
+	//excel2003扩展名  
+    public static final String EXCEL03_EXTENSION = ".xls";  
+    //excel2007扩展名  
+    public static final String EXCEL07_EXTENSION = ".xlsx";  
+	//*****
+    
+	@Override
+	public List<Map<String,String>> parseExcel(InputStream is, String fileName, int bkType) throws Exception  {
+
+		Workbook wb = null;
+		List<Map<String, String>> list = null;
+		// 处理excel2003文件  
+		
+		if (fileName.endsWith(EXCEL03_EXTENSION)){  
+			wb = new HSSFWorkbook(is);
+		// 处理excel2007文件  
+		} else if (fileName.endsWith(EXCEL07_EXTENSION)){  
+			wb = new XSSFWorkbook(is);
+		} else {  
+			throw new ServiceException("文件格式错误，fileName的扩展名只能是xls或xlsx。");  
+		}  
+		
+		
+		try {
+			// 判断是什么批量布控,开始解析
+			int minColumns = 3;
+			switch (bkType) {
+				case 1:
+					minColumns = 3;// 从第3列截止,身份证布控
+					break;
+				case 2:
+					minColumns = 5;// 从第5列截止,wifi布控
+					break;
+				case 3:
+					minColumns = 2;// 从第2列截止 ，车辆布控
+					break;
+				case 4:
+					minColumns = 9;// 从第9列截止 ，预留
+					break;
+				default:
+			}
+
+			list = parseExcelData(wb, minColumns, 1, 0, bkType);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return list;
+	}
+
+
+	
+	// 布控人员信息
+	private String zkrySqlStr = "insert into T_ZK_RYXX (ZKNO,RYXM,RYSFZH,DRCZJH,DRCZR,DRCZDWDM,DRCZNO,IP,RYNO,DRCZSJ) values (?,?,?,?,?,?,?,?,?,";
+	// 统一批次DRCZNO，时间需要一致
+
+	// 人员基本信息
+	private String ryjbxxSqlStr = "insert into T_RYJBXX (ZKNO,RYXM,RYSFZH,SQRDWMC) values (?,?,?,?)";
+
+	
+	@Override
+	@Transactional
+	public String saveBatchData(User userinfo, String ip, BkBatchSaveDTO bkBatchSaveDTO) {
+		
+		String state = "0";
+		if(userinfo.getRoleList() != null && !userinfo.getRoleList().contains("PTYH")) {
+			state = "1";
+		}
+		// 同一批次操作时间
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		String drcznoTime = sdf.format(new Date());
+		
+		// 申请人单位名称
+		String sqrdwmc = userinfo.getDepartmentName();
+		String ryzkkssj = bkBatchSaveDTO.getStartTime();
+		String ryzkjssj = bkBatchSaveDTO.getEndTime();
+		String zyfw = bkBatchSaveDTO.getZyfw();
+		String zyfwStr = "";
+		//让前端传带"_"的
+		if(StringUtils.isNotBlank(zyfw)) {
+			zyfwStr = zyfw;
+			if(zyfw.contains("4")){
+				zyfwStr = zyfw + "_5_";
+			}
+		}
+		String dyfw = bkBatchSaveDTO.getDyfw();
+		String bkyy = bkBatchSaveDTO.getBkyy();
+		String rylx = bkBatchSaveDTO.getRylx();
+		String wbdyfw = bkBatchSaveDTO.getWbdyfw();
+		String wangba = "";
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("1")) && StringUtils.isNotBlank(wbdyfw)) {
+			wangba = wbdyfw;
+		}
+		String lddyfw = bkBatchSaveDTO.getLvdyfw();
+		String lvdian = "";
+		if((StringUtils.isNotBlank(zyfw) & zyfw.contains("2")) && StringUtils.isNotBlank(lddyfw)) {
+			lvdian = lddyfw;
+		}
+		int jkFlag = bkBatchSaveDTO.getJkFlag();//调用类型
+		String drczno = bkBatchSaveDTO.getDrczno();//统一操作编号
+		List<ExcelEntity> list = bkBatchSaveDTO.getSucessList();//excel解析的数据
+		
+		
+		// 插入当前批量提交布控人员信息的操作人员到接收人信息表中
+		String[] paramArray = getCzryParam(bkBatchSaveDTO, userinfo);
+//		int[] typeCzry = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+		//批量插入信息接收人
+		String insertXxjsrSqlStr = " insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,?,?,?,T.DRCZNO,T.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = ?";
+		
+		// 1 身份证布控信息
+		String zkSqlStr1 = " insert into T_ZK_RYXXB (ZKNO,RYXM,RYSFZH,SQRJH,SQRXM,SQRDWDM,SQRDWMC,STATE,BKLX,JKFLAG,RYZKKSSJ,RYZKJSSJ,ZYFW,DYFW,BKYY,RYLX,WBDYFW,LDDYFW,CZSJ) values (?,?,?,?,?,?,?,'" +state+ "','1','" +jkFlag+ "',?,?,?,?,?,?,?,?,sysdate) ";
+		int[] zkSqlStr1Array = new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR };
+		
+		int[] zkrySqlStrArray = new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR };
+		int[] ryjbxxSqlStrArray = new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR };
+		
+		try {
+			for (ExcelEntity excelData : list) {
+				// 智控编号
+				String zkno = excelData.getZkno();
+				// 人员编号
+				String ryno = PubMethod.getUUID("ryno_");
+				// 插入参数
+				String[] rybkParam = getAddParam(excelData, userinfo, zkno);
+
+				// 智控参数
+				String[] zkParam = StringUtil.mergeArray(rybkParam, new String[] { sqrdwmc,ryzkkssj,ryzkjssj,zyfwStr,dyfw,bkyy,rylx,wangba,lvdian });
+				// 智控人员信息参数
+				String[] zkryParam = StringUtil.mergeArray(rybkParam, new String[] { drczno, ip, ryno });
+				// 人员基本信息
+				String[] ryjbxxParam = getAddRyjbxxParam(excelData, userinfo, zkno);
+
+				
+				// 插入布控信息表
+				rybkDao.update(zkSqlStr1, zkParam, zkSqlStr1Array);
+				// 插入布控人员信息表
+				rybkDao.update(zkrySqlStr + "to_date('" + drcznoTime + "','yyyy/MM/dd hh24:mi:ss'))", zkryParam, zkrySqlStrArray);
+				// 插入人员基本信息表
+				rybkDao.update(ryjbxxSqlStr, ryjbxxParam, ryjbxxSqlStrArray);
+				
+			}
+
+			//批量插入接收人
+			rybkDao.update(insertXxjsrSqlStr, paramArray, ryjbxxSqlStrArray);
+			
+			//插入烽火数据库只要是接口调用就不需要审批. 已经布控的插入烽火库(循环)
+			if("1".equals(state)) {
+				insertDataToFhUtils.insertFhDB(drczno, 1, userinfo);
+			}
+		} catch (Exception sqle) {
+			throw new ServiceException("false","执行错误，请与系统管理员联系！");
+		}
+
+		return drczno;
+	}
+
+	/**
+	 * 获取参数
+	 * 
+	 * @param excelData
+	 * @param userinfo
+	 * @param zkno
+	 * @return
+	 * @throws Exception
+	 */
+	private String[] getAddParam(ExcelEntity excelData, User userinfo, String zkno) {
+		// 人员姓名
+		String ryxm = excelData.getRyxm();
+		// 人员身份证号
+		String rysfzh = excelData.getRysfzh();
+
+		// 申请人警号
+		String sqrjh = userinfo.getAccount();
+		// 申请人姓名
+		String sqrxm = userinfo.getName();
+		// 申请人单位代码
+		String sqrdwdm = userinfo.getDepartmentCode();
+		
+		// 参数数组
+		String[] param = new String[] { zkno, ryxm, rysfzh, sqrjh, sqrxm, sqrdwdm };
+		return param;
+	}
+
+	/**
+	 * 获取人员基本信息参数数组
+	 * 
+	 * @param domain
+	 * @param userinfo
+	 * @param zkno
+	 * @return
+	 * @throws Exception
+	 */
+	private String[] getAddRyjbxxParam(ExcelEntity excelData, User userinfo, String zkno) {
+
+		// 人员姓名
+		String ryxm = excelData.getRyxm();
+		// 人员身份证号
+		String rysfzh = excelData.getRysfzh();
+		// 申请人单位名称
+		String sqrdwmc = userinfo.getDepartmentName();
+		// 参数数组
+		String[] param = new String[] { zkno, ryxm, rysfzh, sqrdwmc };
+		return param;
+	}
+
+	
+	/**
+	 * 解析excel
+	 * 
+	 * @param wb
+	 * @param minColumns
+	 *            指定列大小
+	 * @param startRow
+	 *            起始行
+	 * @param endRow
+	 *            终止行
+	 * @return
+	 * @throws IOException
+	 */
+	public List<Map<String,String>> parseExcelData(Workbook wb, int minColumns, int startRow, int endRow, int bkType) throws IOException{
+		List<Map<String, String>> list = new ArrayList<Map<String, String>>();// new;
+		HashMap<String, String> data = null;
+
+		// wb.getNumberOfSheets();默认只要第一个sheet
+
+		Sheet sheet = null;// sheet表
+		Row row = null;// 行
+		Cell cell = null;// 单元格
+		int physicalNumberOfRows = 0;// 行数
+
+		String value = null;// 每个单元格的值
+
+		sheet = wb.getSheetAt(0);
+		if (sheet != null) {
+
+			physicalNumberOfRows = sheet.getPhysicalNumberOfRows();// 获取总行数
+
+			// 可以传入起始行数startRow endRow
+
+			startRow = startRow != 0 ? startRow : 1;// 如果不为0则从第1行读(从0行开始)
+			endRow = endRow != 0 ? endRow : physicalNumberOfRows;// 如果0则为最大行
+
+			for (int j = 1; j >= startRow && j <= endRow; j++) {// 暂不读表头
+
+				row = sheet.getRow(j);
+
+				if (row != null) {
+					data = new HashMap<String, String>();
+
+					for (int k = 0; k < minColumns; k++) {// 指定列大小
+
+						cell = row.getCell(k);
+						value = PubMethod.getCellDataToString(cell);
+						
+						data.put(getHeadNameByType(k+1, bkType), value);
+					}
+					list.add(data);
+
+				}
+
+			}
+
+		}
+
+		return list;
+	}
+
+	
+	/**
+	 * 将原始数据清洗到ExcelEntity里，并筛出正常和不正常的
+	 * @param list
+	 * @param drczno 导入操作编号
+	 * @param type   业务类别: 1人员布控   2 WiFi布控  3 车辆   4 人脸
+	 * @author WangChen
+	 * @return
+	 */
+	@Override
+	public BatchEntityDTO washExcelData(List<Map<String, String>> list, String drczno, int type) {
+		List<Map<String,Object>> redList = redListDao.queryBySfzh(null, 1, 10000000).getMapList();//数据量小，放在内存比，加快效率
+		
+		
+		List<ExcelEntity> excelSucessList = new LinkedList<ExcelEntity>();//正常
+		ExcelEntity excelSucessData = null;
+
+		List<ExcelFailEntity> excelFailList = new LinkedList<ExcelFailEntity>();//失败
+		ExcelFailEntity excelFaildata = null;
+		
+		//1. 人员布控
+		if (type == 1) {
+			for (Map<String, String> metaData : list) {
+				//正常数据
+				if(ValidationUtils.IDCardValidate(metaData.get("rysfzh"))){
+					
+					//红名单处理代码抽取出来
+					if(inOrNotRedList(redList, excelFailList, excelFaildata, metaData)) {
+						continue;
+					}
+					
+					excelSucessData = new ExcelEntity();
+					if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+						excelSucessData.setRyxm(metaData.get("ryxm").trim());
+					}
+					excelSucessData.setRysfzh(metaData.get("rysfzh").trim().toUpperCase());
+					
+					excelSucessData.setZkno(PubMethod.getUUID("zkno_"));//入库--智控编号
+					excelSucessList.add(excelSucessData);
+					
+				}else{
+					//其余全为错误数据
+					excelFaildata = new ExcelFailEntity();
+					//序号
+					if(StringUtils.isNotBlank(metaData.get("xh"))){
+						excelFaildata.setXh(metaData.get("xh").trim());
+					}
+					//姓名
+					if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+						excelFaildata.setRyxm(metaData.get("ryxm").trim());
+					}
+					if(StringUtils.isNotBlank(metaData.get("rysfzh"))){
+						excelFaildata.setRysfzh(metaData.get("rysfzh"));
+					}
+					excelFaildata.setYcyy("身份证异常!");
+					excelFailList.add(excelFaildata);
+					
+				}
+			}
+			
+		//2.  wifi布控	
+		} else if(type == 2) {
+			for (Map<String, String> metaData : list) {
+				
+				//身份证和 mac地址必须全是对的
+				if( (StringUtils.isNotBlank(metaData.get("rysfzh")) & ValidationUtils.IDCardValidate(metaData.get("rysfzh")))
+						&& (StringUtils.isNotBlank(metaData.get("mac")) & checkMac(metaData.get("mac"))) ){
+					
+					//红名单处理代码抽取出来
+					if(inOrNotRedList(redList, excelFailList, excelFaildata, metaData)) {
+						continue;
+					}
+					
+					excelSucessData = new ExcelEntity();
+					//人员姓名
+					if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+						excelSucessData.setRyxm(metaData.get("ryxm").trim());
+					}
+					//手机号码
+					if(StringUtils.isNotBlank(metaData.get("rysjh"))){
+						excelSucessData.setRysjh(metaData.get("rysjh").trim());
+					}
+					//mac地址
+					excelSucessData.setMac(metaData.get("mac").trim());
+					
+					//身份证
+					excelSucessData.setRysfzh(metaData.get("rysfzh").trim().toUpperCase());
+					
+					excelSucessData.setZkno(PubMethod.getUUID("zkno_"));//入库--智控编号
+					excelSucessList.add(excelSucessData);
+					
+				}else{
+					//其余全为错误数据
+					excelFaildata = new ExcelFailEntity();
+					if(StringUtils.isNotBlank(metaData.get("xh"))){
+						excelFaildata.setXh(metaData.get("xh").trim());
+					}
+					if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+						excelFaildata.setRyxm(metaData.get("ryxm").trim());
+					}
+					String ycyy = "身份证或MAC地址异常!";
+					//不符合规范
+					if(StringUtils.isNotBlank(metaData.get("rysfzh"))){
+						ycyy = "身份证格式错误!";
+						excelFaildata.setRysfzh(metaData.get("rysfzh"));
+					}
+					if(StringUtils.isNotBlank(metaData.get("mac")) && !checkMac(metaData.get("mac"))){
+						ycyy += "MAC地址格式错误!";
+					}
+					excelFaildata.setYcyy(ycyy);
+					excelFailList.add(excelFaildata);
+				}
+				
+				
+			}
+			
+		//3. 车辆布控
+		} else if(type == 3) {
+			for (Map<String, String> metaData : list) {
+				//车牌号必须不为空
+				if(StringUtils.isNotBlank(metaData.get("cph")) ){
+					excelSucessData = new ExcelEntity();
+					//车牌号
+					excelSucessData.setCph(metaData.get("cph").trim());
+					
+					excelSucessData.setZkno(PubMethod.getUUID("zkno_"));//入库--智控编号
+					excelSucessList.add(excelSucessData);
+				}else{
+					excelFaildata = new ExcelFailEntity();
+					if(StringUtils.isNotBlank(metaData.get("xh"))){
+						excelFaildata.setXh(metaData.get("xh").trim());
+					}
+					excelFaildata.setYcyy("车牌号异常!");
+					excelFailList.add(excelFaildata);
+				}
+			}
+			
+			
+			
+		//4. 人脸布控	
+		} else { //预留人脸
+			
+		}
+		
+		BatchEntityDTO result = new BatchEntityDTO();
+		result.setSucessList(excelSucessList);
+		result.setFailList(excelFailList);
+		
+		//往服务器写入不符合条件的行
+		if(excelFailList != null && !excelFailList.isEmpty()){
+			importFailExcel(excelFailList, drczno, type);
+		}
+
+		return result;
+	}
+
+	
+	
+	/**
+	 * 红名单校验并生成错误记录操作
+	 * @param excelFailList  错误列表
+	 * @param excelFaildata  1条错误记录
+	 * @param metaData  excel解析后的数据
+	 * @author WangChen
+	 * @return
+	 */
+	public boolean inOrNotRedList(List<Map<String,Object>> redList, List<ExcelFailEntity> excelFailList, ExcelFailEntity excelFaildata, Map<String, String> metaData){
+		//默认为false，不在红名单
+		boolean inOrNotRedList = false;
+		
+		if(redList != null && !redList.isEmpty()) {
+			for(Map<String,Object> red : redList) {
+				if(red.get("IDCARD") != null && red.get("IDCARD").toString().equals(metaData.get("rysfzh"))){
+					
+					excelFaildata = new ExcelFailEntity();
+					//序号
+					if(StringUtils.isNotBlank(metaData.get("xh"))){
+						excelFaildata.setXh(metaData.get("xh").trim());
+					}
+					//姓名
+					if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+						excelFaildata.setRyxm(metaData.get("ryxm").trim());
+					}
+					//身份证号
+					excelFaildata.setRysfzh(metaData.get("rysfzh").trim().toUpperCase());
+					excelFaildata.setYcyy(RybkEmun.RYBK_ERROR_INREDLIST.getDesc());
+					
+					excelFailList.add(excelFaildata);
+					
+					inOrNotRedList = true;
+					return inOrNotRedList;
+				}
+				
+			}
+		}
+		return inOrNotRedList;
+//		metaData.get("rysfzh");
+//		if(inOrNotRedList){
+//			excelFaildata = new ExcelFailEntity();
+//			//序号
+//			if(StringUtils.isNotBlank(metaData.get("xh"))){
+//				excelFaildata.setXh(metaData.get("xh").trim());
+//			}
+//			//姓名
+//			if(StringUtils.isNotBlank(metaData.get("ryxm"))){
+//				excelFaildata.setRyxm(metaData.get("ryxm").trim());
+//			}
+//			//身份证号
+//			excelFaildata.setRysfzh(metaData.get("rysfzh").trim().toUpperCase());
+//			excelFaildata.setYcyy(RybkEmun.RYBK_ERROR_INREDLIST.getDesc());
+//			
+//			excelFailList.add(excelFaildata);
+//		}
+
+//		return inOrNotRedList;
+	}
+
+	
+	
+	/**
+	 * 写出excel到指定目录
+	 * @param excelFailList
+	 * @param drczno
+	 */
+	public static void importFailExcel(List<ExcelFailEntity> excelFailList, String drczno, int bkType){
+		Workbook wb = null;
+        FileOutputStream fos = null;
+        String excelStr = ".xls";
+            try {
+            	wb = new HSSFWorkbook();//excel 2003 
+			} catch (Exception e) {
+				excelStr = ".xlsx";
+				wb = new XSSFWorkbook();//XSSFReader excel07
+			}
+            
+            List<String> dataTitles  = new LinkedList<String>();
+            if(bkType == 1) {
+            	dataTitles.add("序号");
+            	dataTitles.add("姓别");
+            	dataTitles.add("身份证");
+            	dataTitles.add("异常原因");
+            }else if(bkType == 2){
+            	dataTitles.add("序号");
+            	dataTitles.add("姓别");
+            	dataTitles.add("身份证");
+            	dataTitles.add("手机号");
+            	dataTitles.add("MAC地址");
+            	dataTitles.add("异常原因");
+            }else if(bkType == 3) {
+            	dataTitles.add("序号");
+            	dataTitles.add("车牌号");
+            	dataTitles.add("异常原因");
+            } else{//人脸布控预留
+            	dataTitles.add("序号");
+            	dataTitles.add("姓别");
+            	dataTitles.add("身份证");
+            	dataTitles.add("异常原因");
+            }
+            int colIndex = dataTitles.size();
+            
+            Sheet sheet = null;
+            Cell cell = null;
+            sheet = wb.createSheet();
+            Row row = null;
+            
+//            //设置列宽
+//            sheet.setColumnWidth(1, 10 * 256);
+//            sheet.setColumnWidth(2, 20 * 256);
+//            sheet.setColumnWidth(3, 15 * 256);
+            
+            if(excelFailList != null && !excelFailList.isEmpty()) {
+            	int size = excelFailList.size();//总行数
+            	
+            	//处理表头
+            	row = sheet.createRow(0);
+            	for (int head = 0; head<colIndex; head++) {
+            		cell = row.createCell(head);
+            		cell.setCellValue(dataTitles.get(head));
+            	}
+            	
+            	//处理数据
+            	for(int i = 0; i<size; i++) {
+            		row = sheet.createRow(i+1);
+            		//列数
+        			for (int j = 0; j<colIndex; j++) {
+        				cell = row.createCell(j);
+        				//车辆批量布控单独
+        				if(bkType == 3) {
+        					switch(j){
+	        					case 0:
+	        						cell.setCellValue(excelFailList.get(i).getXh());
+	        						break;
+	        					case 1:
+	        						cell.setCellValue(excelFailList.get(i).getCph());
+	        						break;
+        					}
+        					
+        				} else {
+        					switch(j){
+        					case 0:
+        						cell.setCellValue(excelFailList.get(i).getXh());
+        						break;
+        					case 1:
+        						cell.setCellValue(excelFailList.get(i).getRyxm());
+        						break;
+        					case 2:
+        						cell.setCellValue(excelFailList.get(i).getRysfzh());
+        						break;
+        					case 3:
+        						cell.setCellValue(excelFailList.get(i).getYcyy());
+        						break;
+        					}
+        				}
+        				
+        				
+        			}
+            	}
+            	
+            	String urlDir = "/home/xguest/PhotoTest/failExcel/";//linux
+//            	String urlDir = "D:/PhotoTest/failExcel/";//本地windows
+            	String path = urlDir + drczno + excelStr;
+            	try {
+					fos = new FileOutputStream(path);
+					wb.write(fos);
+				} catch (IOException e) {
+				
+					throw new ServiceException("false","生成错误excel失败");
+				}
+            	
+            }
+	}
+	
+	
+	
+	
+//////////////////////////////小工具类////////////////////////////////////
+	
+	// 返回表头英文对照
+	public static String getHeadNameByType(int col, int bkType) {
+		Map<String,String> map = null;
+		if(bkType == 1 || bkType == 2) {
+			map = new HashMap<>();
+			map.put("1", "xh");// 序号
+			map.put("2", "ryxm");// 姓名
+			map.put("3", "rysfzh");// 身份证号
+			map.put("4", "rysjh");// 手机号
+			map.put("5", "mac");// MAC地址
+		} else if(bkType == 3) {
+			map = new HashMap<>();
+			map.put("1", "xh");
+			map.put("2", "cph");// 车牌号
+		} else if(bkType == 4) {//人脸
+		}
+		
+		return map.get(col + "");
+	}
+
+/////////校验///////////////////////////////////////////////	
+	
+	//对身份证进行校验
+	public static boolean checkSfzh(String sfzh){
+		boolean flag = false;
+		
+		if(StringUtils.isNotBlank(sfzh)){
+			//18位身份证简单校验
+			String regex = "^\\d{17}([0-9]|X|x)$";
+			if(Pattern.matches(regex, sfzh)){
+				flag = true;
+			}
+		}
+		return flag;
+	}
+	
+	//对MAC地址进行校验
+	public static boolean checkMac(String mac){
+		boolean flag = false;
+		
+		if(StringUtils.isNotBlank(mac)){
+			//mac简单校验
+			String regex = "^[a-fA-F0-9]{2}(-[a-fA-F0-9]{2}){5}$";
+			if(Pattern.compile(regex).matcher(mac).find()){
+				flag = true;
+			}
+		}
+		return flag;
+	}
+
+	
+
+	
+}

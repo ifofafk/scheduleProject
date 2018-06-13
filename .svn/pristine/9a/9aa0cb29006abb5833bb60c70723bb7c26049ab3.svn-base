@@ -1,0 +1,52 @@
+package com.zngk.service;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.dto.SpDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface BkspService {
+	   /**
+     * 查询自已待审批智控名单
+     *
+     * @return
+     */
+    public UserCenterPage getBuKongList(BkListQueryDTO data, User user, Integer page, Integer pageSize);
+
+	/**
+	 * 单个审批通过，添加审批表流转记录，并记录操作日志
+	 * 返回spno(等同spno)
+	 * @param httpSession
+	 * @param zkno
+	 * @param zkState
+	 * @param spyj
+	 * @return
+	 * @throws Exception
+	 */
+	public String singleShenPi(HttpSession httpSession, User user, String zkno, String zkState, String spyj, String flowId) throws Exception;
+	
+	// 布控续控的操作
+	public ResultGson upControl(HttpSession httpSession,String zkno,String xkyy,String xksj) ;
+
+	// 布控撤控的操作
+	public ResultGson downControl(HttpSession httpSession,String zkno,String ckyy,String cksj);
+	
+	/**
+	 * 生成审批表，返回spno=zkno=object_id
+	 */
+	public String saveSp(HttpSession httpSession, User user, SpDTO spDTO);
+	
+	/**
+	 * 根据objectId查询相关的流转信息
+	 * @param objectId
+	 * @return
+	 */
+	public List<Map<String,Object>> queryFlowListByZkno(String objectId);
+	
+}

@@ -1,0 +1,126 @@
+package com.zngk.service.impl;
+
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.LogonDao;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.ToLogonService;
+import com.zngk.util.DataModel;
+import com.zngk.util.PubMethod;
+import com.zngk.util.ZKDXUtil;
+
+@Service
+@Transactional
+public class ToLogonServieImpl implements ToLogonService {
+	
+	@Autowired
+	private LogonDao logondao;
+	
+	@Value("${time}")
+    private String time;
+	
+	/**
+	 * 查询登录用户信息
+	 * @param username
+	 * @param password
+	 * @return
+	 */
+	@Override
+	public Map<String, Object> longonPasswrod(String username,String password){
+		Map<String, Object> mapinfo = logondao.booleanLongon(username, password);
+		
+		return mapinfo;
+	}
+	
+  /**
+   * 转换用户权限信息
+   * @param mapinfo
+   * @return
+   */
+	@Override
+	public User serchUserinfo(Map<String,Object> mapinfo){
+		User userinfo = new User();
+		userinfo.setAccount(mapinfo.get("YHM")+"");
+		userinfo.setDepartmentCode(mapinfo.get("JGDM")+"");
+		userinfo.setDepartmentName(mapinfo.get("JGDWMC")+"");
+		userinfo.setName(mapinfo.get("YHXM")+"");
+		userinfo.setPassword(mapinfo.get("KL")+"");
+		userinfo.setSjjb(mapinfo.get("SJJB")+"");
+		userinfo.setSj(mapinfo.get("SJ")+"");
+		userinfo.setGly((mapinfo.get("GLY")+"").trim());
+		userinfo.setRoleList(logondao.serchUserRolse(mapinfo.get("YHM")+""));//权限
+		//获取当前审批级别
+		Integer spjb = ZKDXUtil.getSPjb(userinfo);
+		userinfo.setSpjb(spjb);
+		return userinfo;
+	}
+
+	/**
+	 * 
+	 * @param request  登录请求
+	 * @param mapinfo  用户信息
+	 * @return
+	 */
+	@Override
+	public void loginLog(HttpServletRequest request, Map<String, Object> mapinfo, int type){
+		String logId = "log_" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
+		String host = PubMethod.getCallerIpMe(request);//ip  过滤掉localhost  0:0:0:0:0:0:0:1  127.0.0.0
+		if("0:0:0:0:0:0:0:1".equals(host) || "127.0.0.0".equals(host)) {
+			host = "开发本地测试";
+		}
+		String port = request.getRemotePort() + ""; //远程端口
+		String address = request.getRemoteAddr(); //ip +端口
+		String account = mapinfo.get("YHM")!=null? mapinfo.get("YHM").toString(): "";//账号
+		String yhxm = mapinfo.get("YHXM")!=null? mapinfo.get("YHXM").toString(): "";//用户姓名
+		String remark = "";
+		//1 登录
+		if(type == 1) {
+			remark = mapinfo != null?"登录成功":"登录失败";
+		//0 退出
+		}else if(type == 0){
+			remark = "退出成功";
+		//2第三方登录成功
+		}else {
+			remark = mapinfo != null?"第三方调用登录成功":"第三方调用登录失败";
+		}
+		
+		logondao.insertLoginLog(logId, yhxm, type, account, address, host, port, remark);
+		
+	}
+
+	//给定调接口用户登录状态
+	@Override
+	public void jkLogin(HttpServletRequest request, HttpSession httpSession, String outterjh) {
+
+		//登录
+		Map<String, Object> result = logondao.queryByJh(outterjh);
+		if(result == null){
+			throw new ServiceException("false","该用户不存在");
+		}
+		Map<String, Object> mapinfo = logondao.booleanLongon(outterjh, result.get("KL").toString());
+		
+    	User userinfo = this.serchUserinfo(mapinfo);
+    	userinfo.setIp(PubMethod.getCallerIpMe(request));
+    	userinfo.setIsOutter(1);//外部调用标识
+    	httpSession.setAttribute("userinfo", userinfo);
+    	//设置默认过期时间为一小时
+    	httpSession.setMaxInactiveInterval(Integer.parseInt(time));
+    	DataModel modelData = new DataModel();
+    	modelData.setUser(userinfo);
+    	httpSession.setAttribute("modelData", modelData);
+    	
+    	this.loginLog(request, mapinfo, 2);//登录日志
+	}
+	
+	
+}

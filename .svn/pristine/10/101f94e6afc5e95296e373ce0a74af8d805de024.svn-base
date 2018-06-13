@@ -1,0 +1,40 @@
+package com.zngk.dao;
+
+import java.util.Map;
+
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface RybkDao {
+	
+		public void save(String sfzh,String userName,String jySfzh,String jh);
+		
+	    //全国人口基本信息的查询
+		public Map<String,Object> selectPersons(String sfzh);
+	    
+	    //0 保存人员信息表 --wangchen 20170830
+	    public void insertRyxxb(Map<String,String> params,User userinfo);
+	    
+	    //1 保存布控人员信息  --wangchen 20170830
+	    public void insertZkry(Map<String,String> params);
+	    
+	    //2 保存人员基本信息  --wangchen 20170830
+	    public void insertRyjbxx(Map<String,String> params);
+	    
+	    //3 保存信息接收人  --wangchen 20170830
+	    public void insertXxjsr(Map<String,String> params);
+	    
+	    /**
+		 * 根据drczno分页分页查询
+		 * @param drczno
+		 * @param page
+		 * @param pageSize
+		 * @return
+		 */
+		public UserCenterPage pageList(String drczno, Integer page, Integer pageSize);
+	    
+		
+		//执行插入更新等sql
+		public int update(String updSql,Object[] param,int[] types);
+	
+}

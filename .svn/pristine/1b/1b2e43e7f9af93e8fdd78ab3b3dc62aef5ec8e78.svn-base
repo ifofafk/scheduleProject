@@ -1,0 +1,234 @@
+package com.zngk.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.ToLogonService;
+import com.zngk.service.WallService;
+
+@Controller
+@RequestMapping(value="wall")
+public class WallController{
+
+	@Autowired
+	private WallService wallService;
+	
+	@Autowired
+	private ToLogonService tologonservies;
+	
+	/**
+	 * 获取旧墙数据接口
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value="/wallResult",method=RequestMethod.GET)
+	@ApiOperation(value="获取旧墙数据接口",httpMethod="GET",notes="获取旧墙数据接口",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson WallResult() throws ServiceException{
+		ResultGson result = ResultGson.ok();
+		Map<String,Object> data = wallService.getNums();
+		result.setData(data);
+		return result;
+	}
+
+	
+	//1 左一  布控人员分局降序排名
+	@RequestMapping(value="/wallResult1",method=RequestMethod.GET)
+	@ApiOperation(value="左一 ",httpMethod="GET",notes="左一 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson leftResult(){
+		ResultGson result = ResultGson.ok();//200  true
+		List<Map<String,Object>> list = wallService.getNumOne();
+		if(list == null || list.isEmpty()){
+			result.setMsg("单位排名查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(list);
+		return result;
+	}
+	
+	//2 左二    1.上网  2.国内旅客(旅店) 3.铁路  4.民航订座  5.民航进港  6.长途客车  7.wifi 8.车辆卡口
+	@RequestMapping(value="/wallResult2",method=RequestMethod.GET)
+	@ApiOperation(value="左二 ",httpMethod="GET",notes="左二 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson leftTwoResult(){
+		ResultGson result = ResultGson.ok();//200  true
+		List<Map<String,Object>> list = wallService.getNumTwo();
+		if(list == null || list.isEmpty()){
+			result.setMsg("数据资源查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(list);
+		return result;
+		
+	}
+	
+	
+	//3 左三上  
+	@RequestMapping(value="/wallResult3",method=RequestMethod.GET)
+	@ApiOperation(value="左三上 ",httpMethod="GET",notes="左三上 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson leftTwoUpResult(){
+		ResultGson result = ResultGson.ok();//200  true
+		List<Map<String,Object>> list = wallService.getNumThree();
+		if(list == null || list.isEmpty()){
+			result.setMsg("布控人员分类查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(list);
+		return result;
+	}
+		
+	
+	//3 左三下  人员轨迹num01  num03 。。。num24   numbd01 num03。。。时间20170705
+	@RequestMapping(value="/wallResult4",method=RequestMethod.GET)
+	@ApiOperation(value="左三下 ",httpMethod="GET",notes="左三下 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson leftTwoDownResult(String startTime, String endTime){
+		ResultGson result = ResultGson.ok();//200  true
+		Map<String, Object> data = wallService.getNumFour(startTime, endTime);
+		if(data == null){
+			result.setMsg("布控人员轨迹查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(data);
+		return result;
+		
+	}
+	
+	
+	//3 右上  numBd
+	@RequestMapping(value="/wallResult5",method=RequestMethod.GET)
+	@ApiOperation(value="右上 ",httpMethod="GET",notes="右上 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson rightUpResult(){
+		ResultGson result = ResultGson.ok();//200  true
+		List<Map<String,Object>> list = wallService.getNumFive();
+		if(list == null || list.isEmpty()){
+			result.setMsg("布控结果分析查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(list);
+		return result;
+	}
+	
+	
+	//3 右下
+	@RequestMapping(value="/wallResult6",method=RequestMethod.GET)
+	@ApiOperation(value="右下 ",httpMethod="GET",notes="右下 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson rightDownResult(@RequestParam("pageNum") Integer pageNum,@RequestParam("pageSize") Integer pageSize){
+		ResultGson result = ResultGson.ok();//200  true
+		pageNum = pageNum != 0 ? pageNum : 1;
+		pageSize = pageSize != 0 ? pageSize : 10;
+		
+		
+		UserCenterPage data = wallService.getNumSix(pageNum, pageSize); // 列表翻页
+		if(data.getMapList() == null || data.getMapList().isEmpty()){
+			result.setMsg("预警人员查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		
+		Map<String,Object> map = new HashMap<>();
+		map.put("pageNum", pageNum);
+		map.put("pageTotal", data.getAllRecordNO());
+		map.put("list", data.getMapList());
+		result.setData(map);
+		return result;
+	}
+
+	
+	//用户布控情况统计
+	// 1.待审批数   2.当前用户布控的人数   3.当前用户比中的人数
+	@RequestMapping(value="/bkTj",method=RequestMethod.GET)
+	@ApiOperation(value="用户布控情况统计 ",httpMethod="GET",notes="用户布控情况统计 ",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson bkTj(@RequestParam(value = "jkFlag")Integer jkFlag,@RequestParam(value = "outterJh",required=false)String outterJh){
+		ResultGson result = ResultGson.ok();//200  true
+		
+		
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+		
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if(jkFlag == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+		
+		User userinfo = (User)httpSession.getAttribute("userinfo");
+		if(userinfo == null){
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		if(StringUtils.isBlank(userinfo.getDepartmentCode())) {
+			throw new ServiceException("false","问题用户,没有所属单位,请联系管理员!");
+		}
+		Map<String,Object> map = null;
+		
+		@SuppressWarnings("rawtypes")
+		List list = userinfo.getRoleList();
+		
+		//普通用户和没有权限角色的用户
+		if(list.contains("PTYH") || (list==null | list.isEmpty())){
+			map = wallService.getBkTj(userinfo.getAccount()); 
+		} else {
+			map = wallService.getDeptBkTj(userinfo,userinfo.getDepartmentCode(), list.get(0).toString()); 
+		}
+		if(map == null){
+			result.setMsg("查无结果!");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(map);
+		return result;
+	}
+	
+	
+}

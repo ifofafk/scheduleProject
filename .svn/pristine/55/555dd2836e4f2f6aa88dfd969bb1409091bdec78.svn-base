@@ -1,0 +1,104 @@
+package com.zngk.service.impl;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.InsertDataToFhUtils;
+import com.zngk.dao.BkspDao;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.BkspService;
+@Service
+@Transactional
+public class BkspServiceImpl implements BkspService{
+	@Autowired
+	private BkspDao bkspDao;
+	
+	@Autowired
+	private InsertDataToFhUtils insertDataToFhUtils;
+	
+	/**
+     * 查询自已待审批智控名单
+     *
+     * @return
+     */
+    public UserCenterPage getBuKongList(BkListQueryDTO data, User user, Integer page, Integer pageSize){
+        UserCenterPage userCenterPage = bkspDao.getMeRequestZkData(data, user, page, pageSize);
+        return userCenterPage;
+    }
+ // 单个布控的状态修改并记录日志
+ 	@Override
+ 	public int singleShenPi(HttpSession httpSession, String zkno, String zkState, String spyy) throws Exception {
+ 		int flag = 0;
+ 		// 修改状态
+ 		flag = bkspDao.singleShenPi(httpSession,zkno, zkState);
+
+ 		Map<String, Object> ryxxb = bkspDao.queryByZkno(zkno);// 查询t_zk_ryxxb出来
+ 		
+ 		//审批通过时往烽火库插入数据
+ 		User user = (User)httpSession.getAttribute("userinfo");
+ 		insertDataToFhUtils.insertFhzzSp(user,zkState,zkno);
+ 		
+ 	    // 取出布控类型
+ 	 	String bklx = ryxxb.get("bklx")!= null? ryxxb.get("bklx").toString() : "";
+ 	 	
+ 		// 如果布控类型 为2 2表示WiFi布控,则往WiFi中间表里插入数据(安保库)
+ 		if("2".equals(bklx)){
+ 			
+ 			bkspDao.saveWifi(zkno);
+ 		}
+ 		flag = ryxxb != null ? 1 : 0;
+ 		// 记录日志
+
+ 		String spdx = "1";// 控人
+ 		
+ 		String spdxbh = ryxxb.get("rysfzh")!= null? ryxxb.get("rysfzh").toString() : "";/// 身份证号
+ 		String spzt = "0";// 审批通过  //同意
+ 		if("4".equals(zkState)){//不同意
+ 			spzt = "2";//驳回
+ 		}
+ 		//需要根据当前用户权限来判断spb的状态
+ 		
+ 		String ryzkjssj = ryxxb.get("ryzkjssj")!= null? ryxxb.get("ryzkjssj").toString() : "";// 智控结束时间
+
+ 		// 审批人的信息
+// 		User user = (User)httpSession.getAttribute("userinfo");
+ 		String sprxm = user.getName();
+ 		String sprjh = user.getAccount();
+ 		String sprdwmc = user.getDepartmentName();
+ 		// 判断市局 ，分局， 派出所. spb存死，不再判断3级划分
+ 		String spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,pcsspr,pcssprjh,pcsspdwmc,pcsspsj,zkjzrq,pcsspyj) values "
+ 				+ "('" + zkno + "', '" + spdx + "', '" + spdxbh + "', '" + spzt + "', '" + sprxm + "', '" + sprjh
+ 				+ "', '" + sprdwmc + "', to_char(sysdate,'yyyy/MM/dd hh24:mi:ss'), '" + ryzkjssj + "', '" +spyy+ "')";
+ 		
+ 		bkspDao.insertSPBLog(spbSql);// 切记日志表里的spno即是zkno，不然无法获取正确的当前用户辖内待审批
+
+ 		flag = 1;
+ 		return flag;
+ 	}
+ // 布控续控的操作
+ 	@Override
+ 	public ResultGson upControl(HttpSession httpSession,String zkno,String xkyy,String xksj ) {
+ 	
+ 		
+ 		return bkspDao.upControl(httpSession, zkno,xkyy,xksj);
+ 	}
+
+ 	// 布控撤控的操作
+ 	@Override
+ 	public ResultGson downControl(HttpSession httpSession,String zkno,String ckyy,String cksj) {
+ 		return bkspDao.downControl(httpSession, zkno, ckyy, cksj);
+ 	}
+
+ 	
+ 	
+ 	
+ 	
+}

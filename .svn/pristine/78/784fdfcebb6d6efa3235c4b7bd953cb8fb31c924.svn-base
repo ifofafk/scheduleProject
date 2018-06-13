@@ -1,0 +1,56 @@
+package com.zngk.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.zngk.common.ZkDataForm;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.util.DataModel;
+
+public interface MainfoDao {
+  
+	
+	/**
+	 * 获取各单位人员智控数据
+	 * @param
+	 * @return
+	 */
+	UserCenterPage getReceiveAlarmRyzkData(HttpSession httpSession, Integer page, Integer pageSize);
+
+	    /**
+	     * 查询自已待审批智控名单
+	     * @param
+	     * @return
+	     */
+	    UserCenterPage getMeRequestZkData(BkListQueryDTO data, User user, Integer page, Integer pageSize);
+
+	    /**
+	     * 获取各单位人员申请智控名单
+	     * @param
+	     * @return
+	     */
+	    List<Map<String, Object>>getRequestZkData(HttpSession httpSession );
+
+	    /**
+	     * 查询当天在控人数
+	     * @param
+	     * @return
+	     */
+	    Integer getNowPerson(HttpSession httpSession);
+
+
+	    /**
+	     * 获取人员智控比对结果
+	     * @param
+	     * @return
+	     */
+	    List<Map<String, Object>>getResultData(DataModel datamodel,ZkDataForm zkDataForm);
+	    
+
+
+}

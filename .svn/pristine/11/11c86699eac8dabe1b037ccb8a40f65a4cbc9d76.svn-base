@@ -1,0 +1,64 @@
+package com.zngk.service;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.zngk.entity.PublicData;
+
+public interface PersonPmService {
+
+	public void save(String sfzh, String userName, String jySfzh, String jh);
+
+	@SuppressWarnings("rawtypes")
+	public List selectPerson(String sfzh);
+	
+
+	// 获取接口返回的base64图片字符串
+	public String sfzh(String sfzh, String userName, String jySfzh, String jh); 
+
+	public void addObject(String sfzh);
+
+	public void updateObject(String sfzh);
+
+	public void deleteObject(String sfzh);
+
+	public void RequestIll(HttpServletRequest request, HttpSession httpSession);
+
+	// 图片base64传递到controller
+	public String ImagetoController(String imgStr);
+
+	// 单个布控的状态修改并记录日志
+	public int updateStateByZknoAndState(HttpSession httpSession, String zkno, String zkState, String spyj);
+
+	
+	// 布控结果的详细信息
+	@SuppressWarnings("rawtypes")
+	public List selectContent(HttpServletRequest request, HttpSession httpSession);
+	
+
+	// 布控结果的条件查询
+	public void searchResult(HttpSession httpSession, HttpServletRequest request); 
+	
+	// 布控续控的操作
+	public PublicData upControl(HttpSession httpSession,String zkno,String xkyy,String xksj) ;
+
+	// 布控撤控的操作
+	public PublicData downControl(HttpSession httpSession,String zkno,String ckyy,String cksj);
+
+	
+	public void shenPiWifi(HttpSession httpSession, HttpServletRequest request);
+	
+	
+	/**		
+	 * 根据zkno查询布控人员信息
+	 * @param zkno   智控编号
+	 * @return
+	 */
+	public Map<String,Object> queryByZkno(String zkno);
+	
+	
+	
+}

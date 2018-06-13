@@ -1,0 +1,24 @@
+package com.zngk.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.YjcxServiceDao;
+import com.zngk.dto.YjcxDto;
+import com.zngk.entity.PagePublicData;
+import com.zngk.entity.User;
+import com.zngk.service.YjcxService;
+@Service
+@Transactional
+public class YjcxServiceImpl implements YjcxService{
+	@Autowired
+	private YjcxServiceDao yjcxServiceDao;
+	@Override
+	public PagePublicData queryYjxxList(YjcxDto yjcxDto,User user) {
+		// 预警类型 ,0表示查询全部,1表示查询身份证,2表示查询WiFi,3表示查询车辆
+		PagePublicData publicData = yjcxServiceDao.queryYjxxList(yjcxDto,user);
+		
+		return publicData;
+  }
+}

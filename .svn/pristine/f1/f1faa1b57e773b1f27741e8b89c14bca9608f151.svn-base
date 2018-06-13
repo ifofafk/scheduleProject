@@ -1,0 +1,18 @@
+package com.zngk.common;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.zngk.entity.PictureVo;
+import com.zngk.util.GsonUtils;
+import com.zngk.util.HttpUtil;
+@Service
+public class SendPictureData {
+	@Value("${bukongPic}")
+	private String url;
+	public void sendPicture(PictureVo pictureVo)throws Exception{
+		String responseInfo = HttpUtil.postSysLogInfo(GsonUtils.getInstance().toJSON(pictureVo),url);
+		System.out.println(responseInfo);
+	}
+
+}

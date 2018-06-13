@@ -1,0 +1,32 @@
+package com.zngk.dao;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface BkspDao {
+	  /**
+     * 查询自已待审批智控名单
+     * @param
+     * @return
+     */
+    UserCenterPage getMeRequestZkData(BkListQueryDTO data, User user, Integer page, Integer pageSize);
+    public Map<String,Object> queryByZkno(String zkno);
+    
+    //单个布控的状态修改
+    public int singleShenPi(HttpSession httpSession,String zkno, String state, Integer spjb);
+    
+    public void saveWifi(String zkno);
+	public void insertSPBLog(String spdSql);
+	 //布控续控操作
+    public ResultGson upControl(HttpSession httpSession,String zkno,String xkyy,String xksj);
+    //布控的撤控操作
+    public ResultGson downControl(HttpSession httpSession,String zkno,String ckyy,String cksj);
+	Map queryPictureInfo(String zkno);
+
+}

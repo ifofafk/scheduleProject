@@ -1,0 +1,239 @@
+package com.zngk.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.InsertDataToFhUtils;
+import com.zngk.common.constant.rybk.RybkEmun;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.BkspService;
+import com.zngk.service.FlowService;
+import com.zngk.util.DesCryptUtil;  
+ 
+@Api(value="bksp")  
+@Controller  
+@RequestMapping(value="bksp")  
+public class BkspController { 
+
+	private final Log logger = LogFactory.getLog(this.getClass());
+	
+	@Resource
+	private BkspService bkspService;
+	
+	@Autowired
+	private InsertDataToFhUtils insertDataToFhUtils;
+	
+	@Autowired
+	private FlowService flowService;
+	
+	/**
+	 * 布控信息列表
+	 * @param httpSession
+	 * @param data  包含查询条件 审批状态  页码和页面容量
+	 * @return
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@RequestMapping(value = "/buKongList",method=RequestMethod.POST)
+	@ApiOperation(value="布控信息列表",httpMethod="POST",notes="布控信息列表",response=ResultGson.class)
+	@ResponseBody
+	public ResultGson getBuKongList(HttpSession httpSession,@RequestBody InputPageDataDTO<BkListQueryDTO> data) {
+		
+		int page = data.getPageNum() == 0 ? 1 : data.getPageNum();
+		int pageSize = data.getPageSize() == 0 ? 10 : data.getPageSize();
+		// 当前用户信息
+		User user = (User) httpSession.getAttribute("userinfo");
+		if(user == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		ResultGson resultGson =null;
+		try{
+			UserCenterPage userCenterPage = bkspService.getBuKongList(data.getData(), user, page, pageSize);
+			Map map = new HashMap();
+			map.put("pageNum", data.getPageNum());
+			map.put("pageTotal", userCenterPage.getAllRecordNO());
+			map.put("list", userCenterPage.getMapList());
+			resultGson = ResultGson.ok(map);
+		}catch (Exception e) {
+		 resultGson = ResultGson.error(e.getMessage());
+		}
+		return resultGson;
+	}
+	
+	 /**
+     * 单个审批通过
+     * @param httpSession
+     * @param request
+     * @return
+     */
+    @RequestMapping(value="/singleShenPi", method = {RequestMethod.GET})
+    @ApiOperation(value="单个审批通过",httpMethod="GET",notes="单个审批通过",response=ResultGson.class)
+    @ResponseBody
+    public ResultGson singleShenPi(HttpSession httpSession,@RequestParam(value="zkno")String zkno,@RequestParam(value="state")
+    String state,@RequestParam(value="spyj")String spyy){
+    	// 当前用户信息
+		User user = (User) httpSession.getAttribute("userinfo");
+		if(user == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+    			
+    	ResultGson resultGson = null;
+    	logger.info(this.getClass().getName()+":执行【/updateStateByZknoAndState】……");
+    	if(StringUtils.isBlank(zkno) || StringUtils.isBlank(state)) {
+    		resultGson = ResultGson.error("智控编号或者状态为空");
+    		throw new RuntimeException("智控编号或者状态为空");
+    	}
+    	
+    	try{
+    		//审批存入流转,更新流转,zkno即对应spno, state对应flowReslut的 1和 0
+    		String flowId = flowService.updateFlowInfo(user,zkno,state,spyy);
+    		
+    		if(flowId != null){
+    			//审批 ，更新主流转
+    			bkspService.singleShenPi(httpSession,user,zkno,state,spyy,flowId);
+    			
+    			
+    		}
+    		
+    		
+    	}catch (Exception e) {
+    		resultGson = ResultGson.error(e.getMessage());
+    		return resultGson;
+		}
+    	 resultGson = ResultGson.ok();
+    	 return resultGson;
+    }
+    
+  //布控的续控操作
+    @RequestMapping(value="/upControl",method = {RequestMethod.GET})
+    @ResponseBody
+    @ApiOperation(value="布控的续控",httpMethod="GET",notes="布控的续控操作",response=ResultGson.class)
+    public ResultGson upControl(HttpSession httpSession,@RequestParam(value="zkno")String zkno,@RequestParam(value="xkyy")String xkyy,
+    		@RequestParam(value="xksj")String xksj) {
+    	ResultGson resultGson = bkspService.upControl( httpSession, zkno, xkyy, xksj);
+    	insertDataToFhUtils.xuKong(xksj, zkno);
+    	return resultGson;
+    }
+    
+    //布控的撤控操作
+    @RequestMapping(value="/downControl",method = {RequestMethod.GET})
+    @ResponseBody
+    @ApiOperation(value="布控的撤控",httpMethod="GET",notes="布控的撤控操作",response=ResultGson.class)
+    public ResultGson downControl(HttpSession httpSession,@RequestParam(value="zkno")String zkno,
+    		@RequestParam(value="ckyy")String ckyy,@RequestParam(value="cksj")String cksj)
+    {
+    	ResultGson resultGson = bkspService.downControl(httpSession, zkno, ckyy, cksj);
+    	insertDataToFhUtils.cheKong(ckyy, zkno);
+    	return resultGson;
+    }
+    
+    
+//    /**
+//     * 多个审批通过
+//     */
+//    @RequestMapping(value="/batchShenPi", method = {RequestMethod.GET})
+//    @ApiOperation(value="单个审批通过",httpMethod="GET",notes="单个审批通过",response=ResultGson.class)
+//    @ResponseBody
+//    public ResultGson batchShenPi(HttpSession httpSession,@RequestParam(value="zkno")String zkno,@RequestParam(value="state")
+//    String state,@RequestParam(value="spyj")String spyy){
+//    	// 当前用户信息
+//		User user = (User) httpSession.getAttribute("userinfo");
+//		if(user == null) {
+//			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+//		}
+//    			
+//    	ResultGson resultGson = null;
+//    	logger.info(this.getClass().getName()+":执行【/updateStateByZknoAndState】……");
+//    	if(StringUtils.isBlank(zkno) || StringUtils.isBlank(state)) {
+//    		resultGson = ResultGson.error("智控编号或者状态为空");
+//    		throw new RuntimeException("智控编号或者状态为空");
+//    	}
+//    	try{
+//    		bkspService.singleShenPi(httpSession,zkno,state,spyy);
+//    		
+////    		//批量审批存入流转
+////    		flowService.saveFlowByUser(user, );
+//    		
+//    	}catch (Exception e) {
+//    		resultGson = ResultGson.error(e.getMessage());
+//		}
+//    	 resultGson = ResultGson.ok();
+//    	 return resultGson;
+//    }
+    
+    
+    /**
+     * TODO 查询审批流程信息
+     */
+    //布控的续控操作
+    @RequestMapping(value="/queryFlowInfo",method = {RequestMethod.GET})
+    @ApiOperation(value="查询审批流程信息",httpMethod="GET",notes="查询审批流程信息操作",response=ResultGson.class)
+    @ResponseBody
+    public ResultGson queryFlowInfo(HttpSession httpSession,@RequestParam(value="zkno")String zkno) {
+    	ResultGson resultGson = ResultGson.ok();
+    	List<Map<String,Object>> list = bkspService.queryFlowListByZkno(zkno);
+    	resultGson.setData(list);
+    	return resultGson;
+    }
+    
+    
+    
+    /**
+	 * 返回该身份证的智档查询链接
+	 * @param sfzh
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/openZDWindow", method = {RequestMethod.GET })
+	@ApiOperation(value="返回该身份证的智档查询链接",httpMethod="GET",notes="返回该身份证的智档查询链接",response=ResultGson.class)
+	public ResultGson openZDWindow(@RequestParam(value="sfzh")String sfzh) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		if(StringUtils.isBlank(sfzh)) {
+			throw new ServiceException(RybkEmun.RYBK_EMPTY_SFZH.getCode(),RybkEmun.RYBK_EMPTY_SFZH.getDesc());
+		}
+		String param = "/search/archive_archiveIndex.action@archiveId=1$archiveMark=" + sfzh + "@420103197106292019";
+		DesCryptUtil des = null;
+		String query = "";
+		try {
+			des = new DesCryptUtil("sungoalLoginGrant");
+			if(des != null){
+				query = des.encrypt(param);
+			}
+		} catch (Exception e) {
+			throw new ServiceException("false",e.getMessage());
+		}
+		
+		if(StringUtils.isBlank(query)){
+			throw new ServiceException("false","无法获取对应的智档链接!");
+		}
+		String openUrl = "http://10.73.93.215/search/usergrantSearch.jsp?query="+query;
+		result.setData(openUrl);
+		
+		return result;
+	}
+
+
+	
+}  

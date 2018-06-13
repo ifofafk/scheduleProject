@@ -1,0 +1,60 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+import java.util.List;
+
+import com.zngk.entity.ExcelEntity;
+import com.zngk.entity.ExcelFailEntity;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 智控人员批量上传数据传输载体
+ */
+public class BatchEntityDTO implements Serializable {
+
+	private static final long serialVersionUID = 8096646322265347342L;
+
+	//excel解析出的正确数据
+	private List<ExcelEntity> sucessList;
+	
+	//解析失败的数据，包括红名单
+	private List<ExcelFailEntity> failList;
+	
+	//批次编号
+	private String drczno;
+
+	public List<ExcelEntity> getSucessList() {
+		return sucessList;
+	}
+
+	public void setSucessList(List<ExcelEntity> sucessList) {
+		this.sucessList = sucessList;
+	}
+
+	public List<ExcelFailEntity> getFailList() {
+		return failList;
+	}
+
+	public void setFailList(List<ExcelFailEntity> failList) {
+		this.failList = failList;
+	}
+
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	@Override
+	public String toString() {
+		return "BatchEntityDTO [sucessList=" + sucessList + ", failList=" + failList + ", drczno=" + drczno + "]";
+	}
+
+	
+	
+	
+	
+}

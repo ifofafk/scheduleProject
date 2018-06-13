@@ -1,0 +1,230 @@
+package com.zngk.entity;
+import java.sql.Timestamp;
+import java.util.Date;
+/**
+ * 注意:时间必须传入  yyyy-MM-dd hh:mm:ss 这种格式的
+ * @author 熊铸
+ *ZNGK
+ * 2017年10月30日
+ */
+public class InsertDataToFh {
+		// 布控id 
+	    private String tydic_dynamic_id;  
+	    // '布控标题',
+		private String Title ="";
+		//'布控类别(1.人2.机动车3.WIFI)',
+	    private Integer DispositionCategory =1; 
+	    //布控对象特征_人员身份证',
+	    private String TargetFeature_SFZHM =""; 
+	    //'布控对象特征_人员姓名',
+	    private String TargetFeature_XM =""; 
+	    //'布控对象特征_机动车车牌号',
+	    private String TargetFeature_CPHM ="";
+	    //布控对象特征_机动车车牌颜色'
+	    private String TargetFeature_CPYS;
+	    //布控对象特征_机动车车辆类型
+	    private String TargetFeature_CLLX;
+	    //布控对象特征_机动车车辆颜色
+	    private String TargetFeature_CLYS;
+	    //布控对象特征_机动车品牌
+	    private String TargetFeature_CLPP;
+	    
+	    //'布控对象特征_MAC地址',
+		private String  TargetFeature_MAC =""; 
+		//'布控数据资源(1:住宿2:上网3:铁路4:民航5:卡口6:WIFI)',
+		//private Integer  DispositionSource;
+		//'布控优先级(取值范围为1~3，1表示最高)',
+		private Integer  PriorityLevel =1;
+		//'申请人',
+		private String  ApplicantName =""; 
+		//'申请人联系方式',
+		private String  ApplicantInfo ="";
+		//'申请单位',
+		private String  ApplicantOrg ="";
+		//'开始时间',
+		private Timestamp  BeginTime; 
+		//'结束时间',
+		private Timestamp  EndTime;
+		//'创建时间',
+		private Timestamp  CreatTime; 
+		//'布控操作类型(0:布控,1：撤控，2：已结束)',
+		private Integer  OperateType =0;
+		//'告警信息接收手机号(可填写多个手机号，用分隔符隔开)',
+		private String  ReceiveMobile ="";
+		//'布控原因',
+		private String  Reason =""; 
+		//'撤控单位名称',
+		private String  DispositionRemoveOrg ="";
+		//'撤控人',
+		private String  DispositionRemovePerson ="";
+		//'撤控时间',
+		private Timestamp  DispositionRemoveTime; 
+		//'撤控原因',
+	    private String DispositionRemoveReason ="";  
+	    // '创建单位，对应代码表disposition_Department',
+	    private String CreateDepartment ="A001"; 
+	    public String getTydic_dynamic_id() {
+			return tydic_dynamic_id;
+		}
+		public void setTydic_dynamic_id(String tydic_dynamic_id) {
+			this.tydic_dynamic_id = tydic_dynamic_id;
+		}
+		public String getTitle() {
+			return Title;
+		}
+		public void setTitle(String title) {
+			Title = title;
+		}
+		public Integer getDispositionCategory() {
+			return DispositionCategory;
+		}
+		public void setDispositionCategory(Integer dispositionCategory) {
+			DispositionCategory = dispositionCategory;
+		}
+		public String getTargetFeature_SFZHM() {
+			return TargetFeature_SFZHM;
+		}
+		public void setTargetFeature_SFZHM(String targetFeature_SFZHM) {
+			TargetFeature_SFZHM = targetFeature_SFZHM;
+		}
+		public String getTargetFeature_XM() {
+			return TargetFeature_XM;
+		}
+		public void setTargetFeature_XM(String targetFeature_XM) {
+			TargetFeature_XM = targetFeature_XM;
+		}
+		public String getTargetFeature_CPHM() {
+			return TargetFeature_CPHM;
+		}
+		public void setTargetFeature_CPHM(String targetFeature_CPHM) {
+			TargetFeature_CPHM = targetFeature_CPHM;
+		}
+		public String getTargetFeature_MAC() {
+			return TargetFeature_MAC;
+		}
+		public void setTargetFeature_MAC(String targetFeature_MAC) {
+			TargetFeature_MAC = targetFeature_MAC;
+		}
+		public Integer getPriorityLevel() {
+			return PriorityLevel;
+		}
+		public String getApplicantName() {
+			return ApplicantName;
+		}
+		public void setApplicantName(String applicantName) {
+			ApplicantName = applicantName;
+		}
+		public String getApplicantInfo() {
+			return ApplicantInfo;
+		}
+		public void setApplicantInfo(String applicantInfo) {
+			ApplicantInfo = applicantInfo;
+		}
+		public String getApplicantOrg() {
+			return ApplicantOrg;
+		}
+		public void setApplicantOrg(String applicantOrg) {
+			ApplicantOrg = applicantOrg;
+		}
+		public Timestamp getBeginTime() {
+			return BeginTime;
+		}
+		public void setBeginTime(String beginTime) {
+			System.out.println(beginTime.length());
+			if(beginTime.length()<11){
+				BeginTime = Timestamp.valueOf(beginTime+" 00:00:00");
+				
+			}else{
+				BeginTime = Timestamp.valueOf(beginTime);
+			}
+		}
+		public Timestamp getEndTime() {
+			return EndTime;
+		}
+		public void setEndTime(String endTime) {
+			if(endTime.length()<11){
+				EndTime = Timestamp.valueOf(endTime+" 00:00:00");
+				
+			}else{
+				EndTime = Timestamp.valueOf(endTime);
+			}
+		}
+		public Timestamp getCreatTime() {
+			Date date = new Date(System.currentTimeMillis());
+			return new Timestamp(date.getTime());
+		}
+		public Integer getOperateType() {
+			return OperateType;
+		}
+		public void setOperateType(Integer operateType) {
+			OperateType = operateType;
+		}
+		public String getReceiveMobile() {
+			return ReceiveMobile;
+		}
+		public void setReceiveMobile(String receiveMobile) {
+			ReceiveMobile = receiveMobile;
+		}
+		public String getReason() {
+			return Reason;
+		}
+		public void setReason(String reason) {
+			Reason = reason;
+		}
+		public String getDispositionRemoveOrg() {
+			return DispositionRemoveOrg;
+		}
+		public void setDispositionRemoveOrg(String dispositionRemoveOrg) {
+			DispositionRemoveOrg = dispositionRemoveOrg;
+		}
+		public String getDispositionRemovePerson() {
+			return DispositionRemovePerson;
+		}
+		public void setDispositionRemovePerson(String dispositionRemovePerson) {
+			DispositionRemovePerson = dispositionRemovePerson;
+		}
+		public Timestamp getDispositionRemoveTime() {
+			return DispositionRemoveTime;
+		}
+		public void setDispositionRemoveTime(String dispositionRemoveTime) {
+			DispositionRemoveTime = Timestamp.valueOf(dispositionRemoveTime);
+		}
+		public String getDispositionRemoveReason() {
+			return DispositionRemoveReason;
+		}
+		public void setDispositionRemoveReason(String dispositionRemoveReason) {
+			DispositionRemoveReason = dispositionRemoveReason;
+		}
+		public String getCreateDepartment() {
+			return CreateDepartment;
+		}
+		
+		
+		public String getTargetFeature_CPYS() {
+			return TargetFeature_CPYS;
+		}
+		public void setTargetFeature_CPYS(String targetFeature_CPYS) {
+			TargetFeature_CPYS = targetFeature_CPYS;
+		}
+		public String getTargetFeature_CLLX() {
+			return TargetFeature_CLLX;
+		}
+		public void setTargetFeature_CLLX(String targetFeature_CLLX) {
+			TargetFeature_CLLX = targetFeature_CLLX;
+		}
+		public String getTargetFeature_CLYS() {
+			return TargetFeature_CLYS;
+		}
+		public void setTargetFeature_CLYS(String targetFeature_CLYS) {
+			TargetFeature_CLYS = targetFeature_CLYS;
+		}
+		public String getTargetFeature_CLPP() {
+			return TargetFeature_CLPP;
+		}
+		public void setTargetFeature_CLPP(String targetFeature_CLPP) {
+			TargetFeature_CLPP = targetFeature_CLPP;
+		}
+		
+		
+		
+}

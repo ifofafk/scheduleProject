@@ -1,0 +1,102 @@
+package com.zngk.dao.imp;
+
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.DepartmentsDao;
+import com.zngk.dto.FlowDeptDTO;
+import com.zngk.entity.User;
+
+@Repository("DepartmentsDao")
+public class DepartmentsDaoImp extends AbstractDao implements DepartmentsDao{
+	
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+	@Override
+	public List<Map<String, Object>> getDepartmentsByCode(String jgdm) {
+		String sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB where 1=1 ";
+		//为空查询所有
+		if(StringUtils.isNotBlank(jgdm)) {
+			sql = sql + " and yhjgdm='" +jgdm+ "' or yhsjdwdm='" +jgdm+ "'";
+			//如果是最高权限的"武汉市公安局",要求看所有
+			if("420100000000".equals(jgdm)){
+				sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB ";
+			}
+		}
+		
+		return jdbcTemplate.queryForList(sql);
+	}
+
+
+	@Override
+	public List<Map<String, Object>> getDepartmentsByName(String jgmc) {
+		String sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB where 1=1 ";
+		//为空查询所有
+		if(StringUtils.isNotBlank(jgmc)) {
+			sql = sql + " and jgmc like '%" +jgmc+ "%'";
+		}
+		return jdbcTemplate.queryForList(sql);
+	}
+
+
+	@Override
+	public FlowDeptDTO getFlowDepartmentsByUser(User user) {
+		
+		String firstDeptCode = user.getDepartmentCode();
+		String firstDeptName = user.getDepartmentName();
+		FlowDeptDTO flowDeptDTO = new FlowDeptDTO();
+		//当前即一级
+		flowDeptDTO.setFirstDeptCode(firstDeptCode);
+		flowDeptDTO.setFirstDeptName(firstDeptName);
+		
+		String[] param = new String[]{firstDeptCode,firstDeptCode};
+		int[] type = new int[]{Types.VARCHAR,Types.VARCHAR};
+	
+		//上级领导单位
+		String sql = " select yhsjdwdm,yhsjdw,'2' as deptLevel from user_yhzzglb_glb where yhjgdm=? union "
+				+ " select yhsjdwdm,yhsjdw,'3' as deptLevel from user_yhzzglb_glb where yhjgdm in (select yhsjdwdm from user_yhzzglb_glb where yhjgdm=?)";
+		List<Map<String,Object>> list = jdbcTemplate.queryForList(sql, param, type);
+		
+		//默认只有一个父级单位
+		if(list != null && !list.isEmpty()){
+			for(int i=0;i<list.size();i++){
+				if("2".equals(list.get(i).get("deptLevel").toString())){
+					flowDeptDTO.setSecondDeptCode(list.get(i).get("yhsjdwdm").toString());
+					flowDeptDTO.setSecondDeptName(list.get(i).get("yhsjdw").toString());
+				}
+				if("3".equals(list.get(i).get("deptLevel").toString())){
+					flowDeptDTO.setThirdDeptCode(list.get(i).get("yhsjdwdm").toString());
+					flowDeptDTO.setThirdDeptName(list.get(i).get("yhsjdw").toString());
+				}
+				
+			}
+		}
+		
+		return flowDeptDTO;
+
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}

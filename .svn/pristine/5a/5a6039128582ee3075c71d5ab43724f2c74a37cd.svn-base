@@ -1,0 +1,67 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<html>
+	<script type="text/javascript" src="/ZNGK/testPage/jquery.js" ></script>
+	<head>
+		<meta charset="utf-8" />
+		<title>Excel导入(后台测试使用)</title>
+		
+	</head>
+	<body>
+			<form id="fileUpload" action="/ZNGK/rybk/onDoUploadExcel?bkType=1" method="post" enctype="multipart/form-data">
+				<input id="fileName" type="hidden" name="fileName">
+				<input id="real_file" type="file" name="file">	
+				<button id="upload_file" type="button" class="butn butn_blue">上传文件</button>
+				<span id="file_name"></span>
+				<ul>
+				  <li>只允许上传2003版本的Excel文件;</li>
+				  <li>必须按照Excel模板文件填写;</li>
+				</ul>
+				<div class="butn_group">
+					<button type="bu" id="submitExcelBtn" class="butn butn_blue">提交</button>
+					
+				</div>		
+			</form>
+	</body>
+	<script type="text/javascript">
+		$("#submitExcelBtn").on("click",function(){
+		
+			var file = $("#real_file").val();
+			
+			
+			if(file.length>1 && file!=''){
+				//处理一下文件名
+				
+				$("#fileName").val(file.substring(file.lastIndexOf("\\")+1));
+				$('#fileUpload').submit();
+			}else{
+				alert('请先选择文件再提交！');
+				return false;
+			}
+		});
+		$("#upload_file").on("click",function(){
+			$("#real_file").trigger("click");
+		});
+		$("#real_file").on("change",function(e){
+		    upload(e, $(this));
+		});
+		
+		/* if(controllermsg!=null&&controllermsg!=""){
+			parent.close('open_a','zkryxxIframe',1);
+			parent.reloadIframe('zkryxxIframe','批量提交');
+		} */
+		function upload(e,thisdom) {
+// 			console.info(e.target.files[0]);//图片文件
+	        var dom = thisdom;
+	        $("#file_name").text(e.target.value);
+	        
+// 	        console.info(dom.value);//这个是文件的路径 C:\fakepath\icon (5).png
+	        console.log(e.target.value);//这个也是文件的路径和上面的dom.value是一样的
+	        var reader = new FileReader();
+	        reader.onload = function () {
+	        };
+	        reader.readAsDataURL(e.target.files[0]);
+		}
+	</script>
+</html>

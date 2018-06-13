@@ -1,0 +1,79 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 布控列表查询条件
+ */
+public class BkListQueryDTO implements Serializable {
+
+	private static final long serialVersionUID = 1659770318007437179L;
+
+	//被控人姓名
+	private String bkrxm;
+	
+	//身份证号
+	private String sfzh;
+	
+	//申请人
+	private String sqr;
+	
+	//申请单位
+	private String sqdw;
+	
+	//申请原因
+	private String sqyy;
+	
+	//审批状态
+	private Integer state;
+	
+	
+	public String getBkrxm() {
+		return bkrxm;
+	}
+	public void setBkrxm(String bkrxm) {
+		this.bkrxm = bkrxm;
+	}
+	public String getSfzh() {
+		return sfzh;
+	}
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+	public String getSqr() {
+		return sqr;
+	}
+	public void setSqr(String sqr) {
+		this.sqr = sqr;
+	}
+	public String getSqdw() {
+		return sqdw;
+	}
+	public void setSqdw(String sqdw) {
+		this.sqdw = sqdw;
+	}
+	public String getSqyy() {
+		return sqyy;
+	}
+	public void setSqyy(String sqyy) {
+		this.sqyy = sqyy;
+	}
+	public Integer getState() {
+		return state;
+	}
+	public void setState(Integer state) {
+		this.state = state;
+	}
+	
+	@Override
+	public String toString() {
+		return "BkListQueryDTO [bkrxm=" + bkrxm + ", sfzh=" + sfzh + ", sqr=" + sqr + ", sqdw=" + sqdw + ", sqyy="
+				+ sqyy + ", state=" + state + "]";
+	}
+	
+	
+	
+	
+}

@@ -1,0 +1,80 @@
+package com.zngk.dao.imp;
+
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.LogonDao;
+
+@Repository("LogonDao")
+public class LogonDaoimp implements LogonDao{
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	private Logger log = Logger.getLogger(this.getClass().getName());
+	
+	//查询用户角色信息
+	private final static String queryUserRolse = "SELECT * FROM NEW_YHJSB WHERE YHM = ?";
+	
+	/**
+	 * 查询登录用户信息
+	 * @param name
+	 * @param passwrod
+	 * @return
+	 */
+	@Override
+	public Map<String, Object> booleanLongon(String name,String passwrod) {
+		
+		String sql = "select a.*,b.yhm as jgdwmc from new_yhxxb a left join user_yhzzglb_glb b on a.jgdm = b.yhjgdm where a.yhm=? and kl=?";
+		Map<String, Object> mapinfo= new HashMap<String, Object>();
+		try {
+			 mapinfo=jdbcTemplate.queryForMap(sql, new String[]{name,passwrod}, new int[]{Types.VARCHAR,Types.VARCHAR});
+			 log.debug("sql："+sql);
+		} catch (Exception e) {
+			 log.debug("登录用户："+name+"密码错误");
+		}
+		
+		return mapinfo;
+	}
+
+	@Override
+	public List<String> serchUserRolse(String name) {
+      List<Map<String,Object>> listinfo = jdbcTemplate.queryForList(queryUserRolse,new String[]{name},new int[]{Types.VARCHAR});
+       List<String> list = new ArrayList<String>();
+       
+       for(Map<String,Object> map:listinfo){
+    	   list.add(""+map.get("JSDM"));
+       }
+      
+		return list;
+	}
+
+	
+	@Override
+	public void insertLoginLog(String logId, String username, int type, String account, String ip, String host, String port,
+			String remark) {
+		String insertSql = "insert into SYSTEM_LOGIN_LOG (SLL_ID,USER_NAME,LOGIN_DATE,TYPE,USER_ACCOUNT,IP,HOST,PORT,REMARK) values "
+				+ "('" +logId+ "','" +username+ "',sysdate," +type+ ",'" +account+ "','"+ip+"','"+host+"','"+port+"','" +remark+ "')";
+		
+		jdbcTemplate.execute(insertSql);
+	}
+
+	//根据警号查询用户信息
+	@Override
+	public Map<String, Object> queryByJh(String outterjh) {
+		
+		String sql = " select a.*,b.yhm as jgdwmc from new_yhxxb a left join user_yhzzglb_glb b on a.jgdm = b.yhjgdm where a.yhm=?";
+		Map<String, Object> mapinfo= new HashMap<String, Object>();
+		
+		mapinfo = jdbcTemplate.queryForMap(sql, new String[]{outterjh}, new int[]{Types.VARCHAR});
+		
+		return mapinfo;
+	}
+	
+}

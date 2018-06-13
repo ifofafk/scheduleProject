@@ -1,0 +1,22 @@
+package com.zngk.dao;
+
+import com.zngk.entity.RedListPerson;
+import com.zngk.entity.UserCenterPage;
+
+public interface RedListDao{
+
+	//根据身份证分页查询红名单
+	UserCenterPage queryBySfzh(String sfzh, Integer pageNum, Integer pageSize);
+	
+	//新增
+	void addRedList(RedListPerson redListPerson);
+	
+	//根据rlno删除
+	void deleteRedList(String rlno);
+	
+	//根据rlno修改信息
+	void updateRedList(RedListPerson redListPerson);
+	
+	//根据身份证号查询是否在红名单
+	boolean queryInRedListBySfzh(String sfzh);
+}

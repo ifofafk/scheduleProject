@@ -1,0 +1,106 @@
+package com.zngk.entity;
+
+import java.io.Serializable;
+
+/**
+ * @author xuelan
+ * @since ZNGK v2.0
+ * 智控人员基本信息表
+ * 4个批量布控复用  人员，WiFi，车辆，人脸
+ */
+public class ExcelEntity implements Serializable {
+
+	private static final long serialVersionUID = -6961275230078881151L;
+
+	/**
+	 * 人员编号
+	 */
+	protected String zkno;
+	
+	/**
+	 * 人员姓名
+	 */
+	protected String ryxm;
+	
+	/**
+	 * 人员身份证号
+	 */
+	protected String rysfzh;
+	
+	/**
+	 * 手机号
+	 */
+	protected String rysjh;
+	
+	/**
+	 * MAC地址
+	 */
+	protected String mac;
+	
+	/**
+	 * 车牌号
+	 */
+	protected String cph;
+
+	
+	public String getRysjh() {
+		return rysjh;
+	}
+
+	public void setRysjh(String rysjh) {
+		this.rysjh = rysjh;
+	}
+
+	public String getMac() {
+		return mac;
+	}
+
+	public void setMac(String mac) {
+		this.mac = mac;
+	}
+
+	public String getZkno() {
+		return zkno;
+	}
+
+	public void setZkno(String zkno) {
+		this.zkno = zkno;
+	}
+
+	public String getRyxm() {
+		return ryxm;
+	}
+
+	public void setRyxm(String ryxm) {
+		this.ryxm = ryxm;
+	}
+
+	public String getRysfzh() {
+		return rysfzh;
+	}
+
+	public void setRysfzh(String rysfzh) {
+		this.rysfzh = rysfzh;
+	}
+
+	
+	
+	public String getCph() {
+		return cph;
+	}
+
+	public void setCph(String cph) {
+		this.cph = cph;
+	}
+
+	@Override
+	public String toString() {
+		return "ExcelEntity [zkno=" + zkno + ", ryxm=" + ryxm + ", rysfzh=" + rysfzh + ", rysjh=" + rysjh + ", mac="
+				+ mac + ", cph=" + cph + "]";
+	}
+
+	
+	
+	
+
+}

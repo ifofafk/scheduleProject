@@ -1,0 +1,363 @@
+package com.zngk.dao.imp;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLConnection;
+import java.sql.Types;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.apache.log4j.Logger;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
+import org.jdom.input.SAXBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.xml.sax.InputSource;
+
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.zngk.dao.PersonPmDao;
+import com.zngk.dao.RybkDao;
+import com.zngk.entity.DataType;
+import com.zngk.entity.PublicData;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.util.PageSqlUtils;
+import com.zngk.util.PubMethod;
+
+import sun.misc.BASE64Decoder;
+@SuppressWarnings("all")
+@Repository("RybkDao")
+public class RybkDaoImp extends AbstractDao implements RybkDao{
+	private final Logger logger = Logger.getLogger(getClass());
+	String sql="select YJXXBH, YJJSDW, FBRXM,FBRJH, FBDW,ZDRYXM,SFZH, HDFSDDSSSHCS,YKMC,substr(HDXGXX, 0, 20) || '……' as HDXGXX2,"
+	+" HDXGXX,UPDATETIME from T_ZKGJB t where "
+	+" t.FBRXM like '%?%' and t.FBRJH like '%?%'  and t.ZDRYXM like '%?%' and "
+	+" t.SFZH like '%?%'  and t.YKMC like '%?%' order by UPDATETIME desc ";
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    @Resource(name="wifiJdbcTemplate")
+    private JdbcTemplate wifiJdbcTemplate;
+    
+    @Resource(name="abptJdbcTemplate")
+    private JdbcTemplate abptJdbcTemplate;
+    @Value("${pictureUrl}")
+    private String pictureUrl;
+    @Value("${requestUrl}")
+    private String requestUrl;
+
+    @Override
+    public void save(String sfzh,String userName,String jySfzh,String jh) {
+        String url = "http://10.73.93.48:8081/TYDIC_QGRK/getPeopleInfo";
+        //因为要开放页面，当警号这些信息为空的时候，传入默认的警号
+        if(StringUtils.isBlank(jh) || StringUtils.isBlank(userName) || StringUtils.isBlank(jySfzh) ) {
+        	userName = "董粤";
+        	jh = "019840";
+        	jySfzh = "420106198006243213";
+        }
+        String str="sfzh="+sfzh.toUpperCase()+"&"+"userName="+userName+"&"+"jySfzh="+jySfzh.toUpperCase()+"&"+"jh="+jh;
+        String objStr = this.sendGet(url, str);
+        try {
+            StringReader read = new StringReader(objStr);
+            //创建新的输入源sax解析器使用inputsource对象来确定如何读取XML输入
+            InputSource source = new InputSource(read);
+            //创建一个新的ASXBuilder
+            SAXBuilder sb = new SAXBuilder();
+            Document doc = sb.build(source);
+            //获取根元素
+            Element root = doc.getRootElement();
+            //得到根元素所有子元素的集合
+            List jiedian = root.getChildren();
+            //获取XML中的命民空间
+            Namespace ns = root.getNamespace();
+            Element et = null;
+            Element eet = null;
+            //同一个等级下的第五个节点
+            et = (Element) jiedian.get(5);
+            System.out.println("第五个节点et:" + et);
+            List zjiedian = et.getChildren();
+            Element xet = null;
+            xet = (Element) zjiedian.get(1);
+            System.out.println(xet.getName());
+            List zjiedian1 = xet.getChildren();
+            Element xxet = null;
+            xxet = (Element) zjiedian1.get(0);
+            List zjiedian11 = xxet.getChildren();
+            Element xxxet = null;
+            xxxet = (Element) zjiedian11.get(0);
+            List zjiedian111 = xxxet.getChildren();
+            Element xxxxet = null;
+            xxxxet = (Element) zjiedian111.get(0);
+            //同级别有三个Row.
+            Element et1 = (Element) zjiedian111.get(0);
+            Element et2 = (Element) zjiedian111.get(1);
+            Element et3 = (Element) zjiedian111.get(2);
+
+            List list2 = et2.getChildren();
+            List list1 = et3.getChildren();
+            List list3=new ArrayList();
+            List list4=new ArrayList();
+            //String sfzh=null,
+                 String  imgPath=null;
+            for (int i = 0; i < list1.size(); i++) {
+                eet = (Element) list2.get(i);
+                et = (Element) list1.get(i);
+                System.out.println("属性：" + eet.getValue() + " 值：" + et.getValue());
+                if(eet.getValue().equals("SFZH"))
+                {
+                    sfzh=et.getValue();
+                    System.out.println(sfzh);
+                }
+                //照片返回的base64字符串
+                if(eet.getValue().equals("XP"))
+                {            
+                    String xp=et.getValue();
+                    GenerateImage(et.getValue(),sfzh);
+
+                    String imgfile=requestUrl+sfzh+".jpg";           
+                    list4.add(imgfile);     
+                }else{
+                    list4.add(et.getValue());
+                }
+                list3.add(eet.getValue());
+                //  list4.add(et.getValue());
+
+            }
+            //把list中每个对象都加入单引号
+            List<String> a= Lists.newArrayList();
+            for(Object string:list4)
+            {
+                a.add("'"+string+"'");
+            }
+            String s1 = list3.toString();
+            String s2 = a.toString();
+            System.out.println("dffffff"+s2);
+            
+            String sql1="insert into personinfo ("+s1.substring(1,s1.length()-1)+")"+"values "+"("+s2.substring(1,s2.length()-1)+")";
+            jdbcTemplate.execute(sql1);
+        } catch (Exception e) {
+            throw new ServiceException("false", "查询国库异常");
+        }
+    }
+
+    @Override
+    public Map<String,Object> selectPersons(String sfzh) {
+    	Map map =null;
+        String sql="select  *  from personinfo where rownum=1 and sfzh= '"+sfzh+"'";
+        List<Map<String,Object>> list = jdbcTemplate.queryForList(sql);
+        if(list!=null&&list.size()!=0){
+        map =list.get(0);
+        }
+        return map;
+    }
+    
+  //===将requestMap拆分   start====
+  	//0 人员信息表
+  	@Override
+  	public void insertRyxxb(Map<String,String> params,User userinfo){
+  		String state = "0";//审批状态
+  		//薛兰   2017-09-04   如果当前用户是管理员，则状态为1（代表无需审批）
+  		if(!userinfo.getRoleList().contains("PTYH")){
+  			state = "1";//审批状态
+  		}
+  		//bklx == 1身份证布控
+  		String sql = " insert into T_ZK_RYXXB (ZKNO,RYXM,RYSFZH,SQRJH,SQRXM,SQRDWDM,SQRDWMC,RYZKKSSJ,RYZKJSSJ,STATE,ZYFW,DYFW,BKYY,RYLX,WBDYFW,LDDYFW,BKLX,JKFLAG) values ('"+params.get("zkno")+"','"+params.get("username")+"','"+params.get("usercard")+"','"+params.get("sqrjh")+"','"+params.get("sqrxm")+"','"+params.get("sqrdwdm")+"','"+params.get("sqrdwmc")+"','"+params.get("startTime")+"','"+params.get("endTime")+"','"+state+"','"+params.get("zyfw")+"','"+params.get("dyfw")+"','"+params.get("bkyy")+"','"+params.get("personnel")+"','"+params.get("wangba")+"','"+params.get("lvdian")+"','1','" +params.get("jkFlag")+ "')";
+  		logger.info("添加对象的sql"+sql);
+  		
+  		HttpSession httpSession = PubMethod.getSession();
+  		String recordInfo = "进行了新增身份证布控操作,姓名 : "+params.get("username")+" 身份证号: "+params.get("usercard");
+  		if("1".equals(params.get("jkFlag"))){
+  			recordInfo = "第三方接口调用进行了新增身份证布控操作";
+  		}
+  		operationLogUtil.recordLog(httpSession, "1", "身份证布控模块", params.get("zkno"), recordInfo);
+  		
+  		jdbcTemplate.update(sql);
+  	}
+
+  	//1.
+  	@Override
+  	public void insertZkry(Map<String,String> params) {
+  		// 布控人员信息
+  		String zkrySqlStr = " insert into T_ZK_RYXX (RYNO,RYXM,RYSFZH,DRCZNO,DRCZJH,DRCZR,DRCZSJ,DRCZDWDM,ZKNO,IP) values (?,?,?,?,?,?,sysdate,?,?,?) ";
+  		String[] zkryParam = new String[]{params.get("zkno"),params.get("username"),params.get("usercard"),params.get("drczno"),params.get("jsrjh"),params.get("sqrxm"),params.get("sqrdwdm"),params.get("zkno"),params.get("ip")};
+  		int[] zkrTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+  		// 插入布控人员信息表
+  		jdbcTemplate.update(zkrySqlStr,zkryParam,zkrTypes);
+  	}
+  	
+  	//2.
+  	@Override
+  	public void insertRyjbxx(Map<String,String> params) {//被控人身份证号
+  		//人员基本信息
+  		String ryjbxxSqlStr = " insert into T_RYJBXX (ZKNO,RYXM,RYSFZH,HJDZ,SQRDWMC) values (?,?,?,?,?) ";
+  		String[] ryjbxxParam = new String[]{params.get("zkno"),params.get("username"),params.get("usercard"),params.get("hjd"),params.get("sqrdwmc")};
+  		int[] ryjbxxTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+  		// 插入人员基本信息表
+  		jdbcTemplate.update(ryjbxxSqlStr,ryjbxxParam,ryjbxxTypes);
+  	}
+  	
+  	//3.
+  	@Override
+  	public void insertXxjsr(Map<String,String> params){
+  		//插入接收人信息表
+  		String[] xxjsrParams = new String[]{params.get("jsrjh"),params.get("jsrxm"),params.get("jsrsj"),params.get("drczno")};
+  		int[] typeCzry = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+  		String insertXxjsrSqlStr = " insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,?,?,?,t.DRCZNO,t.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = ? ";
+  		
+  		jdbcTemplate.update(insertXxjsrSqlStr, xxjsrParams, typeCzry);
+  	}
+  	//====end=====
+  	
+  	@Override
+	public UserCenterPage pageList(String drczno, Integer pageNum, Integer pageSize) {
+		//导入操作编号
+    	Object[] args = new Object[]{drczno};
+    	
+		int[] argTypes = new int[]{Types.VARCHAR};
+		
+		String sqlStr = "select t.ZKNO,t.RYNO,t.RYXM,t.RYSFZH,DRCZNO,zr.RYSJH,zr.MAC from T_ZK_RYXX t left join T_ZK_RYXXB zr on t.zkno = zr.zkno where DRCZNO = ?";
+		
+		// 查询部分字段用于显示页面
+		UserCenterPage userCenterPage = UserCenterPage.getInstance(pageNum, pageSize);
+		String totalSQL = "select count(0) from (" + sqlStr + ")";
+		
+		Integer listTotal = jdbcTemplate.queryForObject(totalSQL, args, argTypes, Integer.class);
+		userCenterPage.setAllRecordNO(listTotal);
+		
+		// 封装总页数
+		Integer allPageNumber = listTotal / pageSize + (listTotal % pageSize == 0 ? 0 : 1);
+		userCenterPage.setAllPageNO(allPageNumber);
+		String sqlString = PageSqlUtils.createPageSql(sqlStr, pageNum, pageSize);
+	
+		List<Map<String, Object>> list = jdbcTemplate.queryForList(sqlString, args, argTypes);
+		userCenterPage.setMapList(list);
+		return userCenterPage;
+		
+	}
+
+  	
+  	public int update(String updSql,Object[] param,int[] types){
+		int count = jdbcTemplate.update(updSql, param, types);
+		return count;
+	}
+	
+	public void add(String sqlStr,Object[] params,int[] types)
+	{
+		jdbcTemplate.update(sqlStr,params,types);
+	}
+	
+  	
+//======工具类===============================================================
+	
+	//将base64解码并且变成图片,写到服务器文件夹里
+    public  boolean GenerateImage(String imgStr,String sfzh){
+        if(imgStr == null) {
+            return  false;
+        }
+        BASE64Decoder decoder=new BASE64Decoder();
+        //base64解码
+        try {
+            byte[] bytes=decoder.decodeBuffer(imgStr);
+            for(int i=0;i<bytes.length;i++) {
+                if(bytes[i]<0) {
+                    bytes[i]+=256;
+                }
+            }
+            //生产JPG图片路径，把照片读取到本地或者服务器文件夹中保存
+            String imgPath=String.format(pictureUrl+"%s.jpg", sfzh);  
+            //生成JPEGtup,把照片生成对对应的路径中
+            OutputStream out=new FileOutputStream(imgPath);
+            out.write(bytes);
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+	
+
+    public static String sendGet(String url, String param) {
+        String result = "";
+        BufferedReader in = null;
+        try {
+            String urlNameString = url + "?" + param;
+            URL realUrl = new URL(urlNameString);
+            // 打开和URL之间的连接
+            URLConnection connection = realUrl.openConnection();
+            // 设置通用的请求属性
+            connection.setRequestProperty("accept", "*/*");
+            connection.setRequestProperty("connection", "Keep-Alive");
+            connection.setRequestProperty("user-agent",
+                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            // 建立实际的连接
+            connection.connect();
+            // 获取所有响应头字段
+            Map<String, List<String>> map = connection.getHeaderFields();
+            // 遍历所有的响应头字段
+            for (String key : map.keySet()) {
+                //System.out.println(key  + "--->" + map.get(key));
+            }
+            // 定义 BufferedReader输入流来读取URL的响应
+            in = new BufferedReader(new InputStreamReader(
+                    connection.getInputStream(),"UTF-8"));
+            String line;
+            while ((line = in.readLine()) != null) {
+                result += line;
+            }
+        } catch (Exception e) {
+            System.out.println("发送GET请求出现异常！" + e);
+            e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result;
+    }
+
+
+
+
+
+	
+}

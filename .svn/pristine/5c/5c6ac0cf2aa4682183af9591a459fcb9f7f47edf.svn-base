@@ -1,0 +1,16 @@
+package com.zngk.service;
+
+import javax.servlet.http.HttpSession;
+
+import com.zngk.dto.RlsbBkDTO;
+import com.zngk.entity.User;
+/**
+ * 
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月21日
+ */
+public interface RlsbService {
+	
+	public void saveRlsb(HttpSession httpSession,RlsbBkDTO rlsbBkDTO, User userinfo) throws Exception;
+}

@@ -1,0 +1,807 @@
+package com.zngk.util;
+
+import org.springframework.util.StringUtils;
+
+import com.zngk.entity.User;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+/**
+ * Created by lei on 2017-02-23.
+ */
+public class DataModel implements Serializable {
+
+    private static final long serialVersionUID = 4930976031490270648L;
+    /**
+     * 后端数据库查询获取数据的容器．
+     */
+    private Map dbData = new HashMap();
+
+    /**
+     * 前端页面数据的容器
+     */
+    private Map pageData = new HashMap();
+
+    /**
+     * 后端数据库查询获取数据记录条数的容器，记录数与数据同步．
+     */
+    private Map dbDataRowCount = new HashMap();
+
+    /**
+     * 当前request-response期间的用户信息．
+     */
+    private User user;
+
+    private final static String DEFAULT_PAGE_FLAG = "_NEXTPAGE";
+
+    /**
+     * 存储session对象属性的存储器
+     */
+    private Map sessionMap = new HashMap();
+
+    /**
+     * 存储删除掉的session对象属性的存储器
+     */
+    private Map removedSessionAttributeMap = new HashMap();
+
+    /**
+     * 存储删除掉的request对象属性的存储器
+     */
+    private Map removedRequestAttributeMap = new HashMap();
+
+    /**
+     * 存储request对象属性的存储器
+     */
+    private Map requestMap = new HashMap();
+
+    /**
+     * 获取存储request对象属性的存储器.开发者不要使用此方法,仅供系统框架使用.
+     * @return Map 存储request对象属性的存储器
+     */
+    public Map getRequestMap() {
+        return requestMap;
+    }
+
+    /**
+     * 设置存储request对象属性的存储器.开发者不要使用此方法,仅供系统框架使用.
+     * @param requestMap 存储request对象属性的存储器
+     */
+    public void setRequestMap(Map requestMap) {
+        this.requestMap = requestMap;
+    }
+
+    /**
+     * 获取存储Session对象属性的存储器.开发者不要使用此方法,仅供系统框架使用.
+     * @return Map 存储Session对象属性的存储器
+     */
+    public Map getSessionMap() {
+        return sessionMap;
+    }
+
+    /**
+     * 设置存储Session对象属性的存储器.开发者不要使用此方法,仅供系统框架使用.
+     * @param sessionMap 存储Session对象属性的存储器
+     */
+    public void setSessionMap(Map sessionMap) {
+        this.sessionMap = sessionMap;
+    }
+
+    /**
+     * 后端数据容器中是否包含指定标签的数据．
+     *
+     * @param label
+     *            数据标签，通常为表名称，用以标示数据的类别．
+     * @return 包含则为真，否则为假
+     */
+    public boolean containsLabel(String label) {
+
+        if (null == label || "".equals(label.trim())) {
+            return false;
+        }
+        String key = label.trim().toUpperCase();
+        return dbData.containsKey(key);
+    }
+
+    /**
+     * 获取指定标签的数据记录数
+     *
+     * @param label
+     *            数据标签，通常为表名称，用以标示数据的类别．
+     * @return 指定标签的数据记录数，如果不存在指定的标签，返回0.
+     */
+    public int getRowsCount(String label) {
+
+        if (containsLabel(label)) {
+            return ((Integer) dbDataRowCount.get(label.trim().toUpperCase())).intValue();
+        }
+        return 0;
+    }
+
+    /**
+     * 获取缺省标签的数据记录数。 当后端只从一个表中获取数据或者只需要给数据一个标签时，此方法提供了一个简洁的用法。
+     *
+     * @see #getRowsCount(String)
+     * @return 缺省标签的数据记录数.值对象的后端数据为空或没有注册缺省数据标签，返回0.
+     */
+    public int getRowsCount() {
+
+        Iterator i = dbData.keySet().iterator();
+        if (i.hasNext()) {
+            String key = (String) i.next();
+            return getRowsCount(key);
+        }
+        return 0;
+    }
+
+    /**
+     * 将获取的记录集以指定的标签装填进值对象．
+     *
+     * @param label
+     *            数据标签
+     * @param list
+     *            记录集
+     */
+    public void addDbList(String label, List list) {
+
+        if (null == label || "".equals(label.trim())) {
+            return;
+        }
+        int size = -1;
+        if (!(null == list || list.isEmpty())) {
+            size = list.size();
+        }
+        String key = label.trim().toUpperCase();
+        dbData.put(key, list);
+        dbDataRowCount.put(key, new Integer(size));
+    }
+
+    /**
+     * 移除指定的标签所隶属的数据记录集.
+     *
+     * @param label
+     *            数据标签
+     * @return 被移除的数据记录集.如果不存在指定的标签，返回null.
+     */
+    public List removeDbList(String label) {
+
+        if (containsLabel(label)) {
+            String key = label.trim().toUpperCase();
+            dbDataRowCount.remove(label);
+            return (List) dbData.remove(key);
+        }
+        return null;
+    }
+
+    /**
+     * 将获取的行记录加入到指定的标签所隶属的记录集中．
+     *
+     * @param label
+     *            数据标签
+     * @param row
+     *            行记录
+     */
+    public void addDbRow(String label, Map row) {
+
+        if (null == label || "".equals(label.trim())) {
+            return;
+        }
+
+        List list = null;
+        int size = 1;
+        String key = label.trim().toUpperCase();
+        if (containsLabel(label)) {
+            list = (List) dbData.get(key);
+            size = ((Integer) dbDataRowCount.get(key)).intValue();
+            if (size == 0) {
+                list = new ArrayList();
+                size = 1;
+            } else {
+                size++;
+            }
+        } else {
+            list = new ArrayList();
+        }
+        list.add(row);
+        dbData.put(key, list);
+        dbDataRowCount.put(key, new Integer(size));
+    }
+
+    /**
+     * 从指定的标签所隶属的数据记录集中移除指定的行记录．
+     *
+     * @param label
+     *            数据标签.
+     * @param index
+     *            行记录索引，从0开始.
+     * @return 被移除的行记录.如果不存在指定的标签，返回null.
+     */
+    public Map removeDbRow(String label, int index) {
+
+        if (containsLabel(label)) {
+            if (index >= 0 && index <= getRowsCount(label)) {
+                String key = label.trim().toUpperCase();
+                List list = (List) dbData.get(key);
+                dbDataRowCount.put(key, new Integer(getRowsCount(label) - 1));
+                return (Map) list.remove(index);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 将获取的行记录对象加入到指定的标签所隶属的记录集中．
+     *
+     * @param label
+     *            数据标签
+     * @param o
+     *            行记录对象
+     */
+    public void addDbRowForObject(String label, Object o) {
+
+        if (null == label || "".equals(label.trim())) {
+            return;
+        }
+
+        List list = null;
+        int size = 1;
+        String key = label.trim().toUpperCase();
+        if (containsLabel(label)) {
+            list = (List) dbData.get(key);
+            size = ((Integer) dbDataRowCount.get(key)).intValue();
+            if (size == 0) {
+                list = new ArrayList();
+                size = 1;
+            } else {
+                size++;
+            }
+        } else {
+            list = new ArrayList();
+        }
+        list.add(o);
+        dbData.put(key, list);
+        dbDataRowCount.put(key, new Integer(size));
+    }
+
+    /**
+     * 从后端获取的数据记录中获取指定列名称的值．
+     * <p>
+     * <b>注意：</b>此方法会遍历所有后端记录集，直到找到对应的列名称为止，所以如果指定一个后端记录集中并不存在的列名称，在后端记录集很大的情况下，此方法的效率就较低了．
+     * 因此，此方法常用在只有一个数据标签且记录集不大的情况下获取某列的值．
+     *
+     * @param colName
+     *            列名称.
+     * @return 指定列名称的值.如果数据记录不存在指定的列名称，或其值为null，则返回null
+     * @see #getRowItemValue(int, String)
+     */
+    public String getRowItemValue(String colName) {
+        if (null == colName || "".equals(colName.trim())) {
+            return "";
+        }
+        String colNameToUse = colName.trim().toUpperCase();
+        for (Iterator i = dbData.keySet().iterator(); i.hasNext();) {
+            String key = (String) i.next();
+            List list = (List) dbData.get(key);
+            int size = ((Integer) dbDataRowCount.get(key)).intValue();
+            for (int s = 0; s < size; s++) {
+                Object o = list.get(s);
+                if(o instanceof Map) {
+                    Map map = (Map) list.get(s);
+                    if (null != map && map.containsKey(colNameToUse)) {
+                        Object value = map.get(colNameToUse);
+                        if(value instanceof String) {
+                            String rsStr = (String) value;
+                            if(null==rsStr) {
+                                return "";
+                            }
+                            return rsStr;
+                        }
+                    }
+                } else {
+                    //行集不是包装为Map，而是包装为对象
+                    return "";
+                }
+            }
+
+        }
+        return "";
+    }
+
+    /**
+     * 从后端获取的数据记录中获取指定行中的指定列名称的值． <b>注意：</b>此方法会遍历后端所有标签拥有的记录集，在每一个数据标签拥有的记录集的指定行查找列名称的值，找到为止．
+     * 因此，此方法常用在只有一个数据标签的情况下在列表展示页遍历记录集．
+     *
+     * @param index
+     *            行索引，从0开始．
+     * @param colName
+     *            列名称
+     * @return 指定列名称的值.如果数据记录不存在指定的列名称，或指定的行索引超出范围，或其值为null，则返回null
+     */
+    public String getRowItemValue(int index, String colName) {
+
+        if (null == colName || "".equals(colName.trim())) {
+            return null;
+        }
+        String colNameToUse = colName.trim().toUpperCase();
+        for (Iterator i = dbData.keySet().iterator(); i.hasNext();) {
+            String key = (String) i.next();
+            List list = (List) dbData.get(key);
+            int size = ((Integer) dbDataRowCount.get(key)).intValue();
+            if (index >= 0 && index <= size) {
+                Map map = (Map) list.get(index);
+                if (null != map && map.containsKey(colNameToUse)) {
+                    String rsStr = (String) map.get(colNameToUse);
+                    if (StringUtils.hasText(rsStr)) {
+                        return rsStr;
+                    }
+                    return "";
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 从后端获取的数据记录中的指定标签的数据集中获取指定列名称的值．
+     *
+     * @param label
+     *            数据标签
+     * @param colName
+     *            列名称
+     * @return 指定列名称的值.如果不存在指定的数据标签或数据记录不存在指定的列名称，或其值为null，则返回null
+     * @see #getRowItemValue(String, int, String)
+     */
+    public String getRowItemValue(String label, String colName) {
+
+        if (containsLabel(label)) {
+            if (null == colName || "".equals(colName.trim())) {
+                return "";
+            }
+            String colNameToUse = colName.trim().toUpperCase();
+            String key = label.trim().toUpperCase();
+            List list = (List) dbData.get(key);
+            int size = ((Integer) dbDataRowCount.get(key)).intValue();
+            for (int s = 0; s < size; s++) {
+                Map map = (Map) list.get(s);
+                if (null != map && map.containsKey(colNameToUse)) {
+                    String rsStr = (String) map.get(colNameToUse);
+                    if (StringUtils.hasText(rsStr)) {
+                        return rsStr;
+                    }
+                    return "";
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 从后端获取的数据记录中的指定标签的数据集中的指定行中获取指定列名称的值．
+     *
+     * @param label
+     *            数据标签
+     * @param index
+     *            行索引，从0开始．
+     * @param colName
+     *            列名称
+     * @return 指定列名称的值.如果不存在指定的数据标签，或者指定的行索引超出范围，或者数据记录不存在指定的列名称，或其值为null，则返回null
+     */
+    public String getRowItemValue(String label, int index, String colName) {
+
+        if (containsLabel(label)) {
+            if (null == colName || "".equals(colName.trim())) {
+                return "";
+            }
+            String colNameToUse = colName.trim().toUpperCase();
+            String key = label.trim().toUpperCase();
+            List list = (List) dbData.get(key);
+            int size = ((Integer) dbDataRowCount.get(key)).intValue();
+
+            if (index >= 0 && index <= size) {
+                Map map = (Map) list.get(index);
+                if (null != map && map.containsKey(colNameToUse)) {
+                    String rsStr = (String) map.get(colNameToUse);
+                    if (StringUtils.hasText(rsStr)) {
+                        return rsStr;
+                    }
+                    return "";
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取指定行号的行对象
+     *
+     * @param index
+     *            行索引，从0开始．
+     * @return 行对象
+     */
+    public Object getRowObject(int index) {
+
+        for (Iterator i = dbData.keySet().iterator(); i.hasNext();) {
+            String label = (String) i.next();
+            List list = (List) dbData.get(label);
+            int size = ((Integer) dbDataRowCount.get(label)).intValue();
+            if (index >= 0 && index <= size) {
+                return list.get(index);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定数据标签所属记录集中的指定行号的行对象
+     *
+     * @param label
+     *            数据标签
+     * @param index
+     *            行索引，从0开始．
+     * @return 行对象
+     */
+    public Object getRowObject(String label, int index) {
+
+        if (containsLabel(label)) {
+            String key = label.trim().toUpperCase();
+            List list = (List) dbData.get(key);
+            int size = ((Integer) dbDataRowCount.get(key)).intValue();
+            if (index >= 0 && index <= size) {
+                return list.get(index);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 向值对象中装填页面数据项.
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @param value
+     *            数据项值．一般为表单的字段值.
+     */
+    public void addPageItem(String key, String value) {
+
+        if (null == key || "".equals(key.trim())) {
+            return;
+        }
+        pageData.put(key.trim().toUpperCase(), value);
+    }
+
+    /**
+     * 向值对象中装填页面数组类型数据项.例如同一组checkbox的字段值.
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @param values
+     *            数据项值．一般为同一组表单的字段值.
+     */
+    public void addPageItems(String key, String[] values) {
+
+        if (null == key || "".equals(key.trim())) {
+            return;
+        }
+        pageData.put(key.trim().toUpperCase(), values);
+    }
+
+    /**
+     * 获取值对象中的页面数据项的值．
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @return 数据项值．一般为表单的字段值.
+     */
+    public String getPageItemValue(String key) {
+
+        if (null == key || "".equals(key.trim())) {
+            return null;
+        }
+        Object o = pageData.get(key.trim().toUpperCase());
+        if (o instanceof String) {
+            return (String) o;
+        }
+        return null;
+    }
+
+    /**
+     * 获取值对象中的页面整数类型的数据项的值． 此方法通常用于在获取列表页时总页数，页面显示记录数，当前页码等与分页显示相关整数数据．
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @return 整数类型的数据项值．一般为表单的字段值.
+     */
+    public int getPageItemIntValue(String key) {
+
+        String s = getPageItemValue(key);
+        int intRet = 0;
+        try {
+            intRet = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            intRet = 0;
+        }
+        return intRet;
+    }
+
+    /**
+     * 获取值对象中的页面数组类型数据项．例如同一组checkbox的字段值.
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @return 数据项值．一般为同一组表单的字段值.
+     * @see #getPageItemValue(String)
+     */
+    public String[] getPageItemValues(String key) {
+
+        if (null == key || "".equals(key.trim())) {
+            return null;
+        }
+        Object o = pageData.get(key.trim().toUpperCase());
+        if (o instanceof String[]) {
+            return (String[]) o;
+        } else if (o instanceof String) {
+            String[] rtn = { (String) o };
+            return rtn;
+        }
+        return null;
+    }
+
+    /**
+     * 移除页面数据项
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @return 被移除的数据项值．一般为表单的字段值.
+     */
+    public String removePageItem(String key) {
+
+        if (null == key || "".equals(key.trim())) {
+            return null;
+        }
+        Object o = pageData.remove(key.trim().toUpperCase());
+        if (o instanceof String) {
+            return (String) o;
+        }
+        return null;
+    }
+
+    /**
+     * 移除页面数组类型的数据项
+     *
+     * @param key
+     *            数据项名称．一般为表单的字段名.
+     * @return 被移除的数据项值．一般为同一组表单的字段值.
+     */
+    public String[] removePageItems(String key) {
+
+        if (null == key || "".equals(key.trim())) {
+            return null;
+        }
+        Object o = pageData.remove(key.trim().toUpperCase());
+        if (o instanceof String[]) {
+            return (String[]) o;
+        } else if (o instanceof String) {
+            String[] rtn = { (String) o };
+            return rtn;
+        }
+        return null;
+    }
+
+    /**
+     * 为获取值对象元素值的简易方法．
+     * <p>
+     * 当要获取的对象位于页面参数中或只返回一条数据库记录时推荐使用本方法．其他情况请使用{@link #getPageItemValue(String)}, 或{@link #getRowItemValue(String)}.
+     * <p>
+     * 此方法先从页面参数中查找键值为key的元素值，如果没有查找到，则遍历返回的数据库记录集，找到一个对应的列名称为key的为止，返回其值．
+     *
+     * @see #getPageItemIntValue(String)
+     * @see #getRowItemValue(String)
+     * @param key
+     *            键值
+     * @return 键值为key的元素值.如果没有查找到对应的，返回null.
+     */
+    public String getValue(String key) {
+        String value = getPageItemValue(key);
+        if (null == value) {
+            value = getRowItemValue(key);
+        }
+        if (null == value) {
+            value = "";
+        }
+        return value;
+    }
+
+    /**
+     * 为获取值对象元素值的简易方法．只是将{@link #getValue(String)}的返回字符串转化为整形，如果不能转化，返回0.
+     *
+     * @param key
+     *            键值
+     * @return 键值为key的元素值.如果没有查找到对应的，返回null.
+     */
+    public int getIntValue(String key) {
+        try {
+            return Integer.parseInt(getValue(key));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 为获取值对象中单表记录某行某列元素值的简易方法．
+     * <p>
+     * 当要获取的对象位于单个标签里（例如后端只查询了一张表）时推荐使用本方法．其他情况请使用{@link #getRowItemValue(String,int,String)}.
+     * <p>
+     * 此方法只查找第一个标签里的相应行的相应列的值．
+     *
+     * @param index
+     *            行索引，从0开始．
+     * @param key
+     *            键值
+     * @return 某行某列元素值
+     */
+    public String getValue(int index, String key) {
+        String value = "";
+        Iterator i = dbData.keySet().iterator();
+        if (i.hasNext()) {
+            String label = (String) i.next();
+            value = getRowItemValue(label, index, key);
+        }
+        if (null == value) {
+            value = "";
+        }
+        return value;
+    }
+
+    /**
+     * 获取跳转目标页面
+     *
+     * @return 跳转目标页面
+     */
+    public String getNextPage() {
+
+        return getPageItemValue(DEFAULT_PAGE_FLAG);
+    }
+
+    /**
+     * 设置跳转目标页面
+     *
+     * @param nextPage
+     *            跳转目标页面
+     */
+    public void setNextPage(String nextPage) {
+
+        addPageItem(DEFAULT_PAGE_FLAG, nextPage);
+    }
+
+    /**
+     * 获取当前发出请求的用户
+     *
+     * @return 当前发出请求的用户
+     */
+    public User getUser() {
+
+        return user;
+    }
+
+    /**
+     * 设置当前发出请求的用户
+     *
+     * @param user
+     *            当前发出请求的用户
+     */
+    public void setUser(User user) {
+
+        this.user = user;
+    }
+
+    /**
+     * 获取request属性变量值．
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @return request属性变量值．
+     */
+    public Object getRequestAttribute(String attributeName) {
+
+        return requestMap.get(attributeName);
+    }
+
+    /**
+     * 设置request属性变量.
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @param value
+     *            属性变量值．
+     * @return Object 属性变量值．
+     */
+    public Object setRequestAttribute(String attributeName, Object value) {
+
+        requestMap.put(attributeName, value);
+        removedRequestAttributeMap.remove(attributeName);
+        return value;
+    }
+
+    /**
+     * 剔除request属性变量.
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @return Object 被剔除的属性变量值．
+     */
+    public Object removeRequestAttribute(String attributeName) {
+        Object o = requestMap.remove(attributeName);
+        removedRequestAttributeMap.put(attributeName, o);
+        return o;
+    }
+
+    /**
+     * 获取Session属性变量值．
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @return request属性变量值．
+     */
+    public Object getSessionAttribute(String attributeName) {
+        return sessionMap.get(attributeName);
+    }
+
+    /**
+     * 设置Session属性变量.
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @param value
+     *            属性变量值．
+     * @return 属性变量值．
+     */
+    public Object setSessionAttribute(String attributeName, Object value) {
+
+        sessionMap.put(attributeName, value);
+        removedSessionAttributeMap.remove(attributeName);
+        return value;
+    }
+
+    /**
+     * 剔除Session属性变量.
+     *
+     * @param attributeName
+     *            属性变量名称.
+     * @return 属性变量值．
+     */
+    public Object removeSessionAttribute(String attributeName) {
+        Object o = sessionMap.remove(attributeName);
+        removedSessionAttributeMap.put(attributeName, o);
+        return o;
+    }
+    private void writeObject(ObjectOutputStream out) throws IOException{
+        out.defaultWriteObject();
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException,ClassNotFoundException{
+        in.defaultReadObject();
+    }
+
+    /**
+     * 获取存储删除掉的session对象属性的存储器。此方法仅供系统框架使用。
+     * @return  删除掉的session对象属性的存储器
+     */
+    public Map getRemovedSessionAttributeMap() {
+        return removedSessionAttributeMap;
+    }
+
+    /**
+     * 获取删除掉的Request对象属性的存储器。此方法仅供系统框架使用。
+     * @return 删除掉的Request对象属性的存储器
+     */
+    public Map getRemovedRequestAttributeMap() {
+        return removedRequestAttributeMap;
+    }
+
+}

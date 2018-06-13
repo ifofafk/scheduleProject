@@ -1,0 +1,9 @@
+package com.zngk.common.constant;
+
+public interface IConstant {
+
+	String getCode();
+
+	String getDesc();
+}
+

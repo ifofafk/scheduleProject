@@ -1,0 +1,32 @@
+package com.zngk.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.zngk.dao.OperationDao;
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.dto.LoginLogsDto;
+import com.zngk.dto.OperationLogsDto;
+import com.zngk.entity.ResultGson;
+import com.zngk.service.OperationService;
+/**
+ * 
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月6日
+ */
+@Service
+public class OperationServiceImpl implements OperationService{
+	@Autowired 
+	private OperationDao operationLogsDao;
+	@Override
+	public ResultGson queryLoginList(InputPageDataDTO<LoginLogsDto> data) {
+		return operationLogsDao.queryLoginList(data);
+	}
+	@Override
+	public ResultGson queryOperationList(InputPageDataDTO<OperationLogsDto> data) {
+		// TODO Auto-generated method stub
+		return operationLogsDao.queryOperationList(data);
+	}
+
+}

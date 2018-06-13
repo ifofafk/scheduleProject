@@ -1,0 +1,15 @@
+package com.zngk.dao;
+
+import java.util.List;
+import java.util.Map;
+
+public interface DepartmentsDao {
+	
+
+	//根据jgdm查询其上下级部门
+	public List<Map<String,Object>> getDepartmentsByCode(String jgdm);
+	
+	//根据jgmc查询机构信息
+	public List<Map<String,Object>> getDepartmentsByName(String jgmc);
+		
+}

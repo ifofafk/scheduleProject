@@ -1,0 +1,71 @@
+package com.zngk.common.compent;
+
+/**
+ * Created by lei on 2017-02-23.
+ */
+public class Jwzjg {
+	/*
+	 * 警务站对应派出所的机构表实体类
+	 */
+
+    public Jwzjg() {
+        super();
+    }
+    /*
+     * 警务站机构代码
+     */
+    private String jwzjgdm;
+
+    /*
+     * 关联派出所机构代码
+     */
+    private String pcsjgdm;
+
+    /*
+     * 关联派出所机构名称
+     */
+    private String pcsmc;
+
+    /*
+     * 获取警务站机构代码值
+     */
+    public String getJwzjgdm() {
+        return jwzjgdm;
+    }
+
+    /*
+     * 设置警务站机构代码值
+     */
+    public void setJwzjgdm(String jwzjgdm) {
+        this.jwzjgdm = jwzjgdm;
+    }
+
+    /*
+     * 获取派出所机构代码值
+     */
+    public String getPcsjgdm() {
+        return pcsjgdm;
+    }
+
+    /*
+     * 设置派出所机构代码值
+     */
+    public void setPcsjgdm(String pcsjgdm) {
+        this.pcsjgdm = pcsjgdm;
+    }
+
+    /*
+     * 获取派出所机构名称值
+     */
+    public String getPcsmc() {
+        return pcsmc;
+    }
+
+    /*
+     * 设置派出所机构名称值
+     */
+    public void setPcsmc(String pcsmc) {
+        this.pcsmc = pcsmc;
+    }
+
+}

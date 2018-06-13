@@ -1,0 +1,177 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+
+import com.zngk.entity.ExcelEntity;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * WiFi布控表单
+ */
+public class WifiBkDTO implements Serializable {
+
+	private static final long serialVersionUID = -8133698915700248301L;
+
+	//导入操作编号
+	private String drczno;
+	
+	//用户姓名
+	private String xm;
+	
+	//身份证号
+	private String sfzh;
+	
+	//MAC地址
+	private String mac;
+
+	//手机号
+	private String sjh;
+	
+	//人员类型
+	private String rylx;
+	
+	//布控原因
+	private String bkyy;
+	
+	//布控开始时间
+	private String startTime;
+	
+	//布控开始时间
+	private String endTime;
+
+	//接收人警号
+	private String jsrjh;
+	
+	//接收人姓名
+	private String jsrxm;
+
+	//接收人手机
+	private String jsrsjh;
+
+	//是否外部接口调用   1是  0否
+	private int jkFlag;
+
+		
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	public String getXm() {
+		return xm;
+	}
+
+	public void setXm(String xm) {
+		this.xm = xm;
+	}
+
+	public String getSfzh() {
+		return sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+
+	public String getMac() {
+		return mac;
+	}
+
+	public void setMac(String mac) {
+		this.mac = mac;
+	}
+
+	public String getSjh() {
+		return sjh;
+	}
+
+	public void setSjh(String sjh) {
+		this.sjh = sjh;
+	}
+
+	public String getRylx() {
+		return rylx;
+	}
+
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+
+	public String getBkyy() {
+		return bkyy;
+	}
+
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getJsrjh() {
+		return jsrjh;
+	}
+
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+
+	public String getJsrxm() {
+		return jsrxm;
+	}
+
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+
+	public String getJsrsjh() {
+		return jsrsjh;
+	}
+
+	public void setJsrsjh(String jsrsjh) {
+		this.jsrsjh = jsrsjh;
+	}
+
+	
+	public int getJkFlag() {
+		return jkFlag;
+	}
+
+	public void setJkFlag(int jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+
+	@Override
+	public String toString() {
+		return "WifiBkDTO [drczno=" + drczno + ", xm=" + xm + ", sfzh=" + sfzh + ", mac=" + mac + ", sjh=" + sjh
+				+ ", rylx=" + rylx + ", bkyy=" + bkyy + ", startTime=" + startTime + ", endTime=" + endTime + ", jsrjh="
+				+ jsrjh + ", jsrxm=" + jsrxm + ", jsrsjh=" + jsrsjh + ", jkFlag=" + jkFlag + "]";
+	}
+
+	
+
+	
+	
+	
+	
+	
+}

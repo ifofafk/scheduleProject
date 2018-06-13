@@ -1,0 +1,41 @@
+package com.zngk.util;
+
+import com.google.gson.Gson;
+
+/**
+ * Created by mac on 15/6/12.
+ */
+public class GsonUtils {
+	private static GsonUtils ourInstance = new GsonUtils();
+
+	public static GsonUtils getInstance() {
+		return ourInstance;
+	}
+
+	private Gson gson;
+
+	private GsonUtils() {
+		gson = new Gson();
+	}
+
+	public Object getBean(String data, Class tClass) {
+		Object t = null;
+		try {
+			t = gson.fromJson(data, tClass);
+		} catch (Exception e) {
+
+		}
+		return t;
+	}
+
+	public String toJSON(Object object) {
+		String jsonData = "";
+		try {
+			jsonData = gson.toJson(object);
+		} catch (Exception e) {
+			jsonData = "";
+			e.printStackTrace();
+		}
+		return jsonData;
+	}
+}

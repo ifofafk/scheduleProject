@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc"
+	   xmlns:task="http://www.springframework.org/schema/task"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+         http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+	   	http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+	
+	
+    
+	<!-- 自动扫描的包 -->
+	<context:component-scan base-package="cn.com.jxTec.schedulePro.controller">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+	
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="false">
+			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"
+				  p:supportedMediaTypes="application/json"/>
+			<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"
+				  p:supportedMediaTypes="application/octet-stream" />
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="defaultViews">
+			<list>
+				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
+			</list>
+		</property>
+	</bean>
+
+	<!--  默认视图解析
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewNames" value="*html" />
+		<property name="contentType" value="text/html; charset=utf-8" />
+		<property name="cache" value="true" />
+		<property name="prefix" value="/" />
+		<property name="suffix" value="" />
+		<property name="order" value="0"></property>
+	</bean> -->
+	
+	<!-- jsp视图 -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<property name="prefix" value="/WebRoot/jsp/"/>
+		<property name="suffix" value=".jsp"/>
+	</bean>
+
+	
+	
+	<!-- 将 springSwaggerConfig加载到spring容器 -->
+	<bean class="com.mangofactory.swagger.configuration.SpringSwaggerConfig" />
+	<!-- 将自定义的swagger配置类加载到spring容器 -->
+	<bean class="cn.com.jxTec.schedulePro.swagger.SwaggerConfig" />
+	
+	<!-- 处理对静态资源的支持 -->
+	<mvc:default-servlet-handler />
+	<mvc:resources mapping="/css/**" location="/css/" />
+	<mvc:resources mapping="/js/**" location="/js/" />
+	<mvc:resources mapping="/images/**" location="/images/" />
+	<mvc:resources mapping="/swagger/**" location="/swagger/" />
+	<mvc:resources mapping="/template/**" location="/template/" />
+
+		
+	<!-- spring文件上传编码 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" p:defaultEncoding="utf-8" />
+	
+	<!-- 异常处理 注意id要为HandlerExceptionResolver，处理的函数也需要集成它-->
+	<bean id="handlerExceptionResolver" class="cn.com.jxTec.schedulePro.interceptor.ControllerErrorInterceptor"></bean>
+	
+	
+	<!-- 自定义拦截链配置, 结果处理  -->  
+	<mvc:interceptors>  
+        <mvc:interceptor>  
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/swagger/*" />
+            <mvc:exclude-mapping path="/api-docs/*" />
+            <mvc:exclude-mapping path="/rybk/*" />
+            <mvc:exclude-mapping path="/sys/*" />
+            <mvc:exclude-mapping path="/wall/*" />
+            <mvc:exclude-mapping path="/yjcx/*" />
+            <bean class="cn.com.jxTec.schedulePro.filter.SessionFilter"/> 
+        </mvc:interceptor>  
+    	<!-- <mvc:interceptor>
+    		<mvc:mapping path="/dataJson"/>
+    		<bean class="cn.com.jxTec.schedulePro.interceptor.TokenInterceptor" id="tokenInterceptor"/>
+    	</mvc:interceptor> -->
+		<!-- <mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="cn.com.jxTec.schedulePro.interceptor.ResultHandlerInterceptor" />
+		</mvc:interceptor> -->
+    </mvc:interceptors>
+   
+   
+    
+</beans>

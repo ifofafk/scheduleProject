@@ -1,0 +1,14 @@
+package com.zngk.service;
+
+import com.zngk.dto.RlsbBkDTO;
+import com.zngk.entity.User;
+/**
+ * 
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月21日
+ */
+public interface RlsbService {
+	
+	public void saveRlsb(RlsbBkDTO rlsbBkDTO, User userinfo) throws Exception;
+}

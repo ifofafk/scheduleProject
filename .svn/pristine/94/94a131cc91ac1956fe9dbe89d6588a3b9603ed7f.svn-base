@@ -1,0 +1,74 @@
+package com.zngk.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.entity.ResultGson;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.DepartmentsService;
+
+/**
+ * @author WangChen
+ * @since 2017/09/12
+ */
+@Controller
+@RequestMapping(value="departments")
+public class DepartmentsController {
+	
+	private final Log logger = LogFactory.getLog(this.getClass());
+	
+	//部门service
+	@Autowired
+	private DepartmentsService departmentsService;
+    
+    /**
+     * 根据当前用户机构代码查出上下级部门信息
+     * 暂时未使用
+     * @param request
+     * @param httpSession
+     * @return
+     */
+    @RequestMapping(value="/getDepartmentsByCode")
+    @ApiOperation(value="根据机构代码查出上下级部门",httpMethod="GET",notes="根据当前用户机构代码查出上下级部门信息",response=List.class)
+    @ResponseBody
+    public ResultGson getDepartmentsByCode(@RequestParam(value="jgdm") String jgdm) {
+    	ResultGson result = ResultGson.ok();
+    	
+    	if(StringUtils.isBlank(jgdm)) {
+    		throw new ServiceException("false","机构代码不能为空");
+    	}
+    	List<Map<String,Object>> list = departmentsService.getDepartmentsByCode(jgdm.trim());
+    	result.setData(list);
+    	logger.info("执行" + this.getClass().getName());
+
+    	return result;
+    }
+    
+    /**
+     * 根据机构名称模糊查询
+     * @param jgmc  机构名称
+     * @return
+     */
+    @RequestMapping(value="/getDepartmentsByName")
+    @ApiOperation(value="根据机构名模糊查询",httpMethod="GET",notes="根据机构名模糊查询",response=List.class)
+    @ResponseBody
+    public ResultGson getDepartmentsByName(@RequestParam(value="jgmc",required=false) String jgmc) {
+    	ResultGson result = ResultGson.ok();
+    	logger.info("执行" + this.getClass().getName());
+    	List<Map<String,Object>> list = departmentsService.getDepartmentsByName(jgmc);
+    	result.setData(list);
+    	return result;
+    }
+    
+    
+}

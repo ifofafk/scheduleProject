@@ -1,0 +1,59 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * 人员档案查询参数
+ * @author 熊铸
+ *ZNGK
+ * 2017年10月18日
+ */
+public class RyglDTO implements Serializable {
+
+	private static final long serialVersionUID = 1659770318007437179L;
+	//警号
+	private String jh;
+	
+	//机构名称
+	private String jgdm;
+	
+	//身份证号
+	private String sfzh;
+	
+	//角色代码
+	private String jsdm;
+
+	public String getJh() {
+		return jh;
+	}
+
+	public void setJh(String jh) {
+		this.jh = jh;
+	}
+
+	public String getJgdm() {
+		return jgdm;
+	}
+
+	public void setJgdm(String jgdm) {
+		this.jgdm = jgdm;
+	}
+
+	public String getSfzh() {
+		return sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+
+	public String getJsdm() {
+		return jsdm;
+	}
+
+	public void setJsdm(String jsdm) {
+		this.jsdm = jsdm;
+	}
+	
+	
+}

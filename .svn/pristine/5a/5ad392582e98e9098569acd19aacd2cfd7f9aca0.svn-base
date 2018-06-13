@@ -1,0 +1,76 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 查询出用户流转后面的单位信息
+ */
+public class FlowDeptDTO implements Serializable {
+
+	private static final long serialVersionUID = -2033844462755965778L;
+	
+	//流转一级部门代码
+	private String firstDeptCode;
+	//流转一级部门名称
+	private String firstDeptName;
+	
+	//流转二级部门代码
+	private String secondDeptCode;
+	//流转二级部门名称
+	private String secondDeptName;
+	
+	//流转三级部门代码
+	private String thirdDeptCode;
+	//流转三级部门名称
+	private String thirdDeptName;
+	
+	public String getFirstDeptCode() {
+		return firstDeptCode;
+	}
+	public void setFirstDeptCode(String firstDeptCode) {
+		this.firstDeptCode = firstDeptCode;
+	}
+	public String getFirstDeptName() {
+		return firstDeptName;
+	}
+	public void setFirstDeptName(String firstDeptName) {
+		this.firstDeptName = firstDeptName;
+	}
+	public String getSecondDeptCode() {
+		return secondDeptCode;
+	}
+	public void setSecondDeptCode(String secondDeptCode) {
+		this.secondDeptCode = secondDeptCode;
+	}
+	public String getSecondDeptName() {
+		return secondDeptName;
+	}
+	public void setSecondDeptName(String secondDeptName) {
+		this.secondDeptName = secondDeptName;
+	}
+	public String getThirdDeptCode() {
+		return thirdDeptCode;
+	}
+	public void setThirdDeptCode(String thirdDeptCode) {
+		this.thirdDeptCode = thirdDeptCode;
+	}
+	public String getThirdDeptName() {
+		return thirdDeptName;
+	}
+	public void setThirdDeptName(String thirdDeptName) {
+		this.thirdDeptName = thirdDeptName;
+	}
+	
+	
+	
+
+
+	
+
+
+	
+	
+	
+}

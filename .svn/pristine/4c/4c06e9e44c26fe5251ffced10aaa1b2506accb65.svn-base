@@ -1,0 +1,63 @@
+package com.zngk.dao.imp;
+
+import java.sql.Types;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.FlowDao;
+import com.zngk.entity.FlowInfo;
+import com.zngk.entity.User;
+
+@Repository
+public class FlowDaoImpl implements FlowDao{
+	@Autowired
+    private JdbcTemplate jdbcTemplate;
+
+	
+	@Override
+	public void saveFlow(FlowInfo flowInfo) {
+		String sql = " insert into T_ZK_FLOW_INFO VALUES (?,?,?,?,?,sysdate,?,?,?,?,?,?,?,?,sysdate)";
+		Object[] paramArray = new Object[]{flowInfo.getFlowId(),flowInfo.getObjectId(),flowInfo.getCurrNode(),flowInfo.getPreviousNode(),flowInfo.getNextNode(),
+				flowInfo.getFlowState(),flowInfo.getFlowType(),flowInfo.getRemark(),flowInfo.getCreator(),flowInfo.getCurrLevel(),flowInfo.getUpdator()};
+		int[] typeArray = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.INTEGER,Types.INTEGER,Types.VARCHAR,Types.VARCHAR,Types.INTEGER,Types.VARCHAR};
+		jdbcTemplate.update(sql,paramArray,typeArray);
+		
+	}
+
+	@Override
+	public String updateFlow(User user, String zkno, String state) {
+
+		String flowId = null;
+		Integer flowResult = 1;//处理结果 1 yes   0 no
+		String remark = "一审审批已处理";
+		if(user.getSpjb() == 3){
+			remark = "二审审批已处理";
+		}
+		
+		if("4".equals(state)){
+			flowResult = 0;
+		}
+		String sqlSelect = " select flow_id from T_ZK_FLOW_INFO where object_id=? and curr_level=? and curr_node=? ";
+		Object[] paramSelect = new Object[]{zkno, user.getSpjb(), user.getDepartmentCode()};
+		int[] typeSelect = new int[]{Types.VARCHAR,Types.INTEGER,Types.VARCHAR};
+		Map<String,Object> map = jdbcTemplate.queryForMap(sqlSelect, paramSelect, typeSelect);
+		if(map == null){
+			return flowId;
+		}
+		
+		flowId = map.get("flow_id").toString();
+		String sql = " update T_ZK_FLOW_INFO set flow_state=1,flow_result=?, remark=?, updator=?, update_time=sysdate where flow_id=?";
+		//1 已处理 
+		Object[] paramArray = new Object[]{flowResult,remark, user.getAccount(),flowId};
+		int[] typeArray = new int[]{Types.INTEGER,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+		jdbcTemplate.update(sql,paramArray,typeArray);
+		
+		return flowId;
+	}
+			
+	
+	
+}

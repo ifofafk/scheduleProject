@@ -1,0 +1,103 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
+import com.zngk.entity.ExcelEntity;
+
+/**
+ * 人脸实体类
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月21日
+ */
+public class RlsbBkDTO implements Serializable {
+
+	private static final long serialVersionUID = -8133698915700248301L;
+	//是否外部接口调用   1是  0否
+	private int jkFlag;
+	//身份证号
+	private String sfzh;
+	//姓名
+	private String xm;
+	//性别  性别，0未知，1男，2女
+	private String gender;
+	//布控考试时间
+	private String startTime;
+	//布控结束时间
+	private String endTime;
+	//对象类型
+	private String dxlx;
+	//布控原因
+	private String bkyy;
+	//推送手机号
+	private String phone;
+	//图片二进制流
+	private CommonsMultipartFile file;
+	public int getJkFlag() {
+		return jkFlag;
+	}
+	public void setJkFlag(int jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+	public String getSfzh() {
+		return sfzh;
+	}
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+	public String getXm() {
+		return xm;
+	}
+	public void setXm(String xm) {
+		this.xm = xm;
+	}
+	public String getGender() {
+		return gender;
+	}
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	public String getStartTime() {
+		return startTime;
+	}
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+	public String getEndTime() {
+		return endTime;
+	}
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+	public String getDxlx() {
+		return dxlx;
+	}
+	public void setDxlx(String dxlx) {
+		this.dxlx = dxlx;
+	}
+	public String getBkyy() {
+		return bkyy;
+	}
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+	public String getPhone() {
+		return phone;
+	}
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+	public CommonsMultipartFile getFile() {
+		return file;
+	}
+	public void setFile(CommonsMultipartFile file) {
+		this.file = file;
+	}
+	
+	
+
+}

@@ -1,0 +1,24 @@
+package com.zngk.service;
+
+import java.util.List;
+import java.util.Map;
+
+public interface DepartmentsService {
+
+	
+	/**
+	 * @param jgdm 机构代码
+	 * @return
+	 */
+	public List<Map<String,Object>> getDepartmentsByCode(String jgdm);
+	
+	/**
+	 * 根据机构名称查询机构
+	 * @param jgmc  机构名称
+	 * @return
+	 */
+	public List<Map<String,Object>> getDepartmentsByName(String jgmc);
+		
+	
+	
+}

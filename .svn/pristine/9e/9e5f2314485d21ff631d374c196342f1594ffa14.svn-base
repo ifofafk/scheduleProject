@@ -1,0 +1,72 @@
+package com.zngk.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.RlsbBkDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.RlsbService;
+import com.zngk.service.ToLogonService;
+
+import jdk.nashorn.internal.ir.RuntimeNode.Request;
+
+/**
+ * 人脸识别controller
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月21日
+ */
+@Controller
+@RequestMapping(value="rlsb")
+public class RlsbController {
+	
+	
+	@Autowired
+	private RlsbService rlsbService;
+	
+	@Autowired
+	private ToLogonService tologonservies;
+	
+	/**
+	 * 单个布控
+	 * @author 熊铸
+	 *  2017年11月21日
+	 */
+	@RequestMapping(value="saveRlsb",method=RequestMethod.POST)
+	@ApiOperation(value="单个人脸布控",httpMethod="POST",notes="单个人脸布控",response=ResultGson.class) 
+	@ResponseBody
+	public ResultGson saveRlsb(RlsbBkDTO rlsbBkDTO) throws Exception{
+		ResultGson result = ResultGson.ok();
+		
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User)httpSession.getAttribute("userinfo");
+		
+		//指定账号登录(外部接口调用)
+		if(rlsbBkDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+				
+		if(userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+			rlsbService.saveRlsb(rlsbBkDTO,userinfo);
+		
+		return result;
+	}
+	
+}

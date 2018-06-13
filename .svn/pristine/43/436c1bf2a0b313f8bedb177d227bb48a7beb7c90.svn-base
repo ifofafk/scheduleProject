@@ -1,0 +1,97 @@
+package com.zngk.util;
+
+import java.sql.Types;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+
+
+
+/**
+ * 操作日志公共方法
+ * @author 熊铸
+ *ZNGK
+ * 2017年10月19日
+ */
+@Service
+public class OperationLogUtil {
+	@Autowired 
+	private JdbcTemplate jdbcTemplate;
+	
+	/**
+	 * 记录日志
+	 * @param httpSession
+	 * @param operation_type 操作类 
+	 * @param module 模块
+	 * @param module_id 模块id
+	 * @param operating_info 操作信息
+	 */
+	public  void  recordLog(HttpSession httpSession,String operation_type,String module,String module_id,String operating_info){
+		//operation_type表示操作类型,1表示新增操作,2表示删除操作,3表示修改操作
+		//module 表示操作模块
+		//module_id 表示操作主键(可有可无)
+		//operating_info 表示操作信息
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		String ip = request.getRemoteAddr();
+		String host = request.getRemoteHost();
+		String port = request.getRemotePort()+"";
+		String sol_id = UUID.randomUUID().toString().replaceAll("-", "");
+		User user = (User)httpSession.getAttribute("userinfo");
+		if(user == null){
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		String user_accout = user.getName();
+		String remark="";
+		if("1".equals(operation_type)){
+			remark ="新增操作";
+		}
+		if("2".equals(operation_type)){
+			remark ="删除操作";
+		}
+		if("3".equals(operation_type)){
+			remark ="修改操作";
+		}
+		String sql ="insert into system_operating_log(sol_id,user_accout,operating_date,operation_type,module,module_id,operating_info,remark,ip,host,port) values(?,?,sysdate,?,?,?,?,?,?,?,?)";
+		Object[] args ={sol_id,user_accout,operation_type,module,module_id,user_accout+"："+operating_info,remark,ip,host,port};
+		int[] argTypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+		jdbcTemplate.update(sql, args, argTypes);
+	}
+	public  void  recordLog(HttpSession httpSession,String operation_type,String module,String operating_info){
+		//operation_type表示操作类型,1表示新增操作,2表示删除操作,3表示修改操作
+		//module 表示操作模块
+		//module_id 表示操作主键(可有可无)
+		//operating_info 表示操作信息
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		String ip = request.getRemoteAddr()+"";
+		String host = request.getRemoteHost()+"";
+		String port = request.getRemotePort()+"";
+		String sol_id = UUID.randomUUID().toString().replaceAll("-", "");
+		User user_accout = (User)httpSession.getAttribute("userinfo");
+		String remark="";
+		if("1".equals(operation_type)){
+			remark ="新增操作";
+		}
+		if("2".equals(operation_type)){
+			remark ="删除操作";
+		}
+		if("3".equals(operation_type)){
+			remark ="修改操作";
+		}
+		String sql ="insert into system_operating_log(sol_id,user_accout,operating_date,operation_type,module,operating_info,remark,ip,host,port) values(?,?,sysdate,?,?,?,?,?,?,?)";
+		Object[] args ={sol_id,user_accout,operation_type,module,operating_info,remark,ip,host,port};
+		int[] argTypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+		jdbcTemplate.update(sql, args, argTypes);
+	}
+
+}

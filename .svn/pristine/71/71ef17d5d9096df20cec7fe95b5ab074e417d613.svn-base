@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc"
+	   xmlns:task="http://www.springframework.org/schema/task"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+         http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+	   	http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+	<!-- 启用MVC注解 -->
+	<mvc:annotation-driven />
+	<!-- 将 springSwaggerConfig加载到spring容器 -->
+	<bean class="com.mangofactory.swagger.configuration.SpringSwaggerConfig" />
+	<!-- 将自定义的swagger配置类加载到spring容器 -->
+	<bean class="com.springmvc.swagger.SwaggerConfig" />
+	<!-- 处理对静态资源的支持 -->
+	<mvc:resources mapping="/css/**" location="/css/" />
+	<mvc:resources mapping="/js/**" location="/js/" />
+	<mvc:resources mapping="/images/**" location="/images/" />
+	<mvc:resources mapping="/swagger/**" location="/swagger/" />
+
+
+	<!-- 扫描所有包 -->
+	<context:component-scan base-package="com.springmvc.*" />
+
+
+
+	<!-- 默认视图解析 -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewNames" value="*html" />
+		<property name="contentType" value="text/html; charset=utf-8" />
+		<property name="cache" value="true" />
+		<property name="prefix" value="/" />
+		<property name="suffix" value="" />
+		<property name="order" value="0"></property>
+	</bean>
+
+
+	<!-- 注册拦截器 <mvc:interceptors> <mvc:interceptor> <mvc:mapping path="/**"/> 
+		<mvc:exclude-mapping path="/doLoginAjax.do"/> <mvc:exclude-mapping path="/toLogin.do"/> 
+		</mvc:interceptor> </mvc:interceptors> -->
+		
+	<!-- spring文件上传编码 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" p:defaultEncoding="utf-8" />
+	
+	<!-- 异常处理 -->
+	<bean id="exceptionHandler" class="com.springmvc.interceptor.ControllerErrorInterceptor"></bean>
+	
+	<!-- 自定义拦截链配置 -->  
+	<mvc:interceptors>  
+        <mvc:interceptor>  
+            <mvc:mapping path="/"/>
+            <bean class="com.springmvc.filter.SessionFilter"/>
+        </mvc:interceptor>  
+    	<mvc:interceptor>
+    		<mvc:mapping path="/dataJson"/>
+    		<bean class="com.springmvc.interceptor.TokenInterceptor" id="tokenInterceptor"/>
+    	</mvc:interceptor>
+    </mvc:interceptors>
+    
+    
+</beans>

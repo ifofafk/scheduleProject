@@ -1,0 +1,118 @@
+package com.zngk.entity;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * excel解析失败列表(格式不对和红名单)
+ * 4个批量布控复用  人员，WiFi，车辆，人脸
+ */
+public class ExcelFailEntity implements Serializable {
+
+	private static final long serialVersionUID = -40484713827911630L;
+	
+	/**
+	 * 序号
+	 */
+	protected String xh;
+	
+	/**
+	 * 人员姓名
+	 */
+	protected String ryxm;
+	
+	/**
+	 * 人员身份证号
+	 */
+	protected String rysfzh;
+	
+	/**
+	 * 手机号
+	 */
+	protected String sjh;
+	
+	/**
+	 * MAC地址
+	 */
+	protected String mac;
+	
+	/**
+	 * 车牌号
+	 */
+	protected String cph;
+	
+	/**
+	 * 异常原因
+	 */
+	protected String ycyy;
+
+	public String getXh() {
+		return xh;
+	}
+
+	public void setXh(String xh) {
+		this.xh = xh;
+	}
+
+	public String getRyxm() {
+		return ryxm;
+	}
+
+	public void setRyxm(String ryxm) {
+		this.ryxm = ryxm;
+	}
+
+	public String getRysfzh() {
+		return rysfzh;
+	}
+
+	public void setRysfzh(String rysfzh) {
+		this.rysfzh = rysfzh;
+	}
+
+	public String getYcyy() {
+		return ycyy;
+	}
+
+	public void setYcyy(String ycyy) {
+		this.ycyy = ycyy;
+	}
+
+	public String getSjh() {
+		return sjh;
+	}
+
+	public void setSjh(String sjh) {
+		this.sjh = sjh;
+	}
+
+	public String getMac() {
+		return mac;
+	}
+
+	public void setMac(String mac) {
+		this.mac = mac;
+	}
+
+	public String getCph() {
+		return cph;
+	}
+
+	public void setCph(String cph) {
+		this.cph = cph;
+	}
+
+	@Override
+	public String toString() {
+		return "ExcelFailEntity [xh=" + xh + ", ryxm=" + ryxm + ", rysfzh=" + rysfzh + ", sjh=" + sjh + ", mac=" + mac
+				+ ", cph=" + cph + ", ycyy=" + ycyy + "]";
+	}
+
+	
+	
+
+	
+	
+	
+}

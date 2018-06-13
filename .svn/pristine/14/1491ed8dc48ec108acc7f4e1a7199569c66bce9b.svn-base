@@ -1,0 +1,60 @@
+package com.zngk.service.impl;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.RedListDao;
+import com.zngk.entity.RedListPerson;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.RedListService;
+
+@Service
+@Transactional
+public class RedListServiceImpl implements RedListService {
+
+	@Autowired
+	private RedListDao redListDao;
+
+	
+	@Override
+	public UserCenterPage queryBySfzh(String sfzh, Integer pageNum, Integer pageSize) {
+		pageNum = pageNum != 0 ? pageNum : 1;
+		pageSize = pageSize != 0 ? pageSize : 10;
+		
+		return redListDao.queryBySfzh(sfzh,pageNum,pageSize);
+	}
+	
+	@Override
+	public boolean queryInRedListBySfzh(String sfzh) {
+		return redListDao.queryInRedListBySfzh(sfzh);
+	}
+
+	@Override
+	public void addRedList(RedListPerson redListPerson, String yhm) {
+		if(StringUtils.isNotBlank(yhm)){
+			redListPerson.setCreator(yhm);
+			redListPerson.setUpdatetor(yhm);
+		}
+		
+		redListDao.addRedList(redListPerson);
+	}
+
+	@Override
+	public void deleteRedList(String rlno) {
+		redListDao.deleteRedList(rlno);
+	}
+
+	@Override
+	public void updateRedList(RedListPerson redListPerson,String yhm) {
+		if(StringUtils.isNotBlank(yhm)){
+			redListPerson.setUpdatetor(yhm);
+		}
+		redListDao.updateRedList(redListPerson);
+		
+	}
+	
+	
+
+}

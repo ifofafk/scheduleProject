@@ -1,0 +1,27 @@
+package com.zngk.dao;
+
+import java.util.List;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.zngk.entity.IDomain;
+import com.zngk.entity.User;
+
+public interface IDao {
+
+	public abstract void add(IDomain domain,JdbcTemplate jdbcTemplate,User userinfo,String ip,String drczno) throws Exception;
+	
+	public abstract void add(String sqlStr);
+	
+	public abstract void add(String sqlStr,Object[] params,int[] types);
+	
+	@SuppressWarnings("rawtypes")
+	public abstract List queryForList(String sqlStr);
+	
+	@SuppressWarnings("rawtypes")
+	public abstract List queryForList(String sqlStr,Object[] paramArray,int[] typeArray);
+	
+	public abstract String beforeImportSave(User userinfo);
+	
+	public void update(JdbcTemplate jdbcTemplate,String drczno);
+}

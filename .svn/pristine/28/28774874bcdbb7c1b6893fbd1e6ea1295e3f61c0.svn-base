@@ -1,0 +1,155 @@
+package com.zngk.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.entity.RedListPerson;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.RedListService;
+
+@Controller
+@RequestMapping("redList")
+public class RedListController {
+
+	@Autowired
+	private RedListService redListService;
+
+	/**
+	 * 增加红名单
+	 * 
+	 * @param redListPerson
+	 */
+	@RequestMapping(value = "/addRedListPerson",method=RequestMethod.PUT)
+	@ApiOperation(value = "新增红名单人员", httpMethod = "PUT", notes = "新增红名单人员", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson addRedListPerson(@RequestBody RedListPerson redListPerson) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		// 获取session，考虑做个redis存放session？
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+
+		redListService.addRedList(redListPerson, userinfo.getName());
+
+		return result;
+	}
+
+	/**
+	 * 根据主键删除红名单
+	 * 
+	 * @param redListPerson
+	 */
+	@RequestMapping(value = "/deleteRedListPerson",method=RequestMethod.DELETE)
+	@ApiOperation(value = "删除红名单人员", httpMethod = "DELETE", notes = "删除红名单人员", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson deleteRedListPerson(@RequestParam(value = "rlno") String rlno) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		// 获取session，考虑做个redis存放session？
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		redListService.deleteRedList(rlno);
+		return result;
+	}
+
+	/**
+	 * 根据主键修改
+	 * 
+	 * @param redListPerson
+	 */
+	@RequestMapping(value = "/updateRedList",method=RequestMethod.POST)
+	@ApiOperation(value = "根据主键修改", httpMethod = "POST", notes = "根据主键修改", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson updateRedList(@RequestBody RedListPerson redListPerson) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		// 获取session，考虑做个redis存放session？
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+		if(StringUtils.isBlank(redListPerson.getRlno())){
+			throw new ServiceException("flase","主键不能为空");
+		}
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		redListService.updateRedList(redListPerson, userinfo.getName());
+		return result;
+	}
+
+	/**
+	 * 根据身份证查询红名单
+	 * 
+	 * @param sfzh
+	 *            身份证号,若为空则查询所有
+	 * @return
+	 */
+	@RequestMapping(value = "/queryRedListBySfzh",method=RequestMethod.GET)
+	@ApiOperation(value = "根据身份证查询红名单", httpMethod = "GET", notes = "根据身份证查询红名单", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson queryRedListBySfzh(@RequestParam(value = "sfzh", required = false) String sfzh,
+			@RequestParam(value = "pageNum") Integer pageNum, @RequestParam(value = "pageSize") Integer pageSize)
+			throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		pageNum = pageNum != 0 ? pageNum : 1;
+		pageSize = pageSize != 0 ? pageSize : 10;
+		
+		UserCenterPage data = redListService.queryBySfzh(sfzh, pageNum, pageSize);
+		Map<String,Object> map = new HashMap<>();
+		map.put("pageNum", pageNum);
+		map.put("pageTotal", data.getAllRecordNO());
+		map.put("list", data.getMapList());
+		result.setData(map);
+		
+		return result;
+	}
+	
+	/**
+	 * 根据身份证查询是否在红名单
+	 * @param sfzh
+	 * @return  true是在红名单，false不在红名单
+	 */
+	@RequestMapping(value = "/queryInRedListBySfzh",method=RequestMethod.GET)
+	@ApiOperation(value = "根据身份证查询是否在红名单", httpMethod = "GET", notes = "根据身份证查询是否在红名单", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson queryInRedListBySfzh(@RequestParam(value = "sfzh") String sfzh) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+		boolean inRedListOrNot = redListService.queryInRedListBySfzh(sfzh);
+		result.setData(inRedListOrNot);
+		return result;
+	}
+	
+	
+	
+	
+
+}

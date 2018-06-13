@@ -1,0 +1,195 @@
+package com.zngk.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.zngk.common.Singleton;
+import com.zngk.dao.DepartmentsDao;
+import com.zngk.dao.FlowDao;
+import com.zngk.dto.FlowDeptDTO;
+import com.zngk.entity.FlowInfo;
+import com.zngk.entity.User;
+import com.zngk.service.FlowService;
+import com.zngk.util.PubMethod;
+
+@Service
+public class FlowServiceImpl implements FlowService {
+	@Autowired
+	private FlowDao flowDao;
+
+	@Autowired
+	private DepartmentsDao departmentsDao;
+	
+	@Override
+	public String createFlowByUser(User user, String objectId) {
+		String currFlowId = PubMethod.getUUID("fl_");
+		
+		//获取当前审批级别
+		Integer spjb = user.getSpjb();
+		//该用户有角色问题
+		if(user.getSpjb() < 0){
+			return null;
+		}
+
+		int flowType = 1;// 1 审批  流转业务类别: 
+		int flowState = 1;//布控人的  1 已处理
+		String yhm = user.getAccount();//用户警号
+		String departmentCode = user.getDepartmentCode();//用户部门代码
+		
+		
+		FlowInfo flowInfo = null;
+		//查询当前用户所在部门的上级领导单位和上上级领导单位
+		FlowDeptDTO flowDeptDTO = departmentsDao.getFlowDepartmentsByUser(user);
+		
+		// 1 、0 不传0，  要走全部审批的
+		if(spjb == 1) {
+			
+			//默认派出所(起点是派出所PTYH)   当前用户是派出所， 他的一审还是派出所，二审是市局
+			String currNode1 = departmentCode;
+			String previousNode1 = null;
+			String nextNode1 = departmentCode;
+			//派出所管理员，下一是市局管理员
+			String currNode2 = departmentCode;
+			String previousNode2 = departmentCode;
+			String nextNode2 = flowDeptDTO.getThirdDeptCode();
+			//市局管理员
+			String currNode3 = flowDeptDTO.getThirdDeptCode();
+			String previousNode3 = departmentCode;
+			String nextNode3 = null;
+			if(departmentCode.lastIndexOf(Singleton.FjjgdmStr) > 0){// 当前用户是分局，他的一审还是分局，二审是市局
+				//分局gly
+				currNode2 = departmentCode;
+				previousNode2 = departmentCode;
+				nextNode2 = flowDeptDTO.getSecondDeptCode();
+				//市局管理员
+				currNode3 = flowDeptDTO.getSecondDeptCode();
+				previousNode3 = departmentCode;
+				nextNode3 = null;
+			}
+			
+			//流转一级部门
+			flowInfo = new FlowInfo();
+			flowInfo.setFlowId(currFlowId);
+			flowInfo.setObjectId(objectId);//流转对象id  ，批量存批量的drczno
+			flowInfo.setFlowType(flowType);
+			flowInfo.setFlowState(flowState);//流转状态1: 已处理(布控)
+			flowInfo.setFlowResult(1);//布控的人这一级yes
+			flowInfo.setRemark("申请布控,进入流转1");//备注，预留
+			flowInfo.setCreator(yhm);//创建人
+			flowInfo.setUpdator(yhm);//更新人
+			flowInfo.setCurrLevel(spjb);//当前流转审批级别
+			flowInfo.setCurrNode(currNode1);//当前流转部门
+			flowInfo.setPreviousNode(previousNode1);
+			flowInfo.setNextNode(nextNode1);//下一级部门代码  gly的部门
+			flowDao.saveFlow(flowInfo);
+			
+			//流转二级部门(还是相同，PTYH和GLY部门一致)
+			flowInfo.setFlowId(PubMethod.getUUID("fl_"));
+			flowInfo.setFlowState(flowState-1);//流转状态1:   0未处理
+			flowInfo.setFlowResult(null);//还没到这里
+			flowInfo.setRemark(null);//备注，预留
+			flowInfo.setCurrLevel(spjb+1);//当前流转审批级别
+			flowInfo.setCurrNode(currNode2);//gly的部门
+			flowInfo.setPreviousNode(previousNode2);
+			flowInfo.setNextNode(nextNode2);//下一级部门代码
+			flowDao.saveFlow(flowInfo);
+			
+			//流转三级部门
+			flowInfo.setFlowId(PubMethod.getUUID("fl_"));
+			flowInfo.setCurrLevel(spjb+2);//当前流转审批级别
+			flowInfo.setCurrNode(currNode3);//gly的部门
+			flowInfo.setPreviousNode(previousNode3);
+			flowInfo.setNextNode(nextNode3);//下一级部门代码
+			flowDao.saveFlow(flowInfo);
+		
+		//只走终审的
+		} else if(spjb == 2) {
+			//默认派出所(起点是派出所GLY)   当前用户是派出所，二审是市局
+			String currNode1 = departmentCode;
+			String previousNode1 = null;
+			String nextNode1 = flowDeptDTO.getThirdDeptCode();//派出所1的 3才是市局
+			//市局管理员
+			String currNode2 = flowDeptDTO.getThirdDeptCode();
+			String previousNode2 = departmentCode;
+			String nextNode2 = null;
+			
+			if(departmentCode.lastIndexOf(Singleton.FjjgdmStr) > 0){// 当前用户是分局，二审是市局
+				//起点 当前用户是分局PTYH
+				currNode1 = departmentCode;
+				previousNode1 = null;
+				nextNode1 = flowDeptDTO.getSecondDeptCode();
+				//市局管理员
+				currNode2 = flowDeptDTO.getSecondDeptCode();
+				previousNode2 = departmentCode;
+				nextNode2 = null;
+			}
+
+			//流转一级部门
+			flowInfo = new FlowInfo();
+			flowInfo.setFlowId(currFlowId);
+			flowInfo.setObjectId(objectId);//流转对象id  ，批量存批量的drczno
+			flowInfo.setFlowState(flowState);//流转状态1:相当于这个级别的一布控即一审完了，走二审
+			flowInfo.setFlowType(flowType);
+			flowInfo.setFlowResult(1);//一审人这一级yes
+			flowInfo.setRemark("2级审批的人申请布控,进入流转2");//备注，预留
+			flowInfo.setCreator(yhm);//创建人
+			flowInfo.setUpdator(yhm);//更新人
+			flowInfo.setCurrLevel(spjb);//当前流转审批级别
+			flowInfo.setCurrNode(currNode1);//当前流转部门
+			flowInfo.setPreviousNode(previousNode1);
+			flowInfo.setNextNode(nextNode1);//下一级部门代码
+			flowDao.saveFlow(flowInfo);
+			
+			//流转二级部门
+			flowInfo.setFlowId(PubMethod.getUUID("fl_"));
+			flowInfo.setFlowState(flowState-1);//流转状态1:
+			flowInfo.setFlowResult(null);//还没到这里
+			flowInfo.setRemark(null);//备注，预留
+			flowInfo.setCurrLevel(spjb+1);//当前流转审批级别
+			flowInfo.setCurrNode(currNode2);
+			flowInfo.setPreviousNode(previousNode2);//即当前用户
+			flowInfo.setNextNode(nextNode2);//下一级部门代码
+			flowDao.saveFlow(flowInfo);
+	
+		//市局管理员不需要审的	
+		} else if(spjb == 3) {
+			//流转三级部门
+			flowInfo = new FlowInfo();
+			flowInfo.setFlowId(currFlowId);
+			flowInfo.setObjectId(objectId);//流转对象id  ，批量存批量的drczno
+			flowInfo.setFlowState(flowState);//流转状态1: 已处理
+			flowInfo.setFlowResult(1);//一审人这一级yes
+			flowInfo.setFlowType(flowType);//审批
+			flowInfo.setRemark("市局管理员申请布控,进入流转3，终审");//备注，预留
+			flowInfo.setCreator(yhm);//创建人
+			flowInfo.setUpdator(yhm);//更新人
+			flowInfo.setCurrNode(departmentCode);//当前流转部门
+			flowInfo.setCurrLevel(spjb);//当前流转审批级别
+			flowDao.saveFlow(flowInfo);
+		}
+		return currFlowId;
+	}
+	
+	@Override
+	public String updateFlowInfo(User user, String zkno, String state) {
+		return flowDao.updateFlow(user, zkno, state);
+	}
+	
+	@Override
+	public FlowInfo queryFlowByUser(User user) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void queryFlowByObjectId(User user, String zkno) {
+//		String sql = "select * from t_zk_flow_info where object_id='" + zkno + "'";
+		
+	}
+
+
+	
+	
+	
+
+}

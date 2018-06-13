@@ -1,0 +1,22 @@
+package com.zngk.dao;
+
+import javax.servlet.http.HttpSession;
+
+import com.zngk.dto.PersonDto;
+import com.zngk.dto.PersonInfodto;
+import com.zngk.entity.UserCenterPage;
+
+public interface PersonAdDao {
+	
+	public UserCenterPage controlList(HttpSession httpSession,Integer page ,Integer pageSize, String sql,Object[] args,int[] argTypes);
+	
+	 //执行修改的操作
+    public int personUpdate(HttpSession httpSession,PersonDto personDto);
+    
+  //修改密码
+	public int updateByJhkl(String yhm, String kl,HttpSession httpSession);
+	
+	  //用户信息添加的
+    public int personSave(PersonInfodto personInfodto,HttpSession httpSession);
+
+}

@@ -1,0 +1,16 @@
+package com.zngk.util;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class GetShiJianCuoUtil {
+	
+	public synchronized static String getyyyyMMddHHmmss(){
+		
+		SimpleDateFormat xm = new SimpleDateFormat("yyyyMMddHHmmss");
+        Date date2 = new Date();
+    	String zkno = xm.format(date2);
+    	return zkno;
+	}
+
+}

@@ -1,0 +1,23 @@
+#session invalid time
+#  dan wei ms 3600 is one hours
+time=3600
+#密钥
+encryptionKey=zngk@2017
+#图片存放位置
+pictureUrl=D://PhotoTest/
+#服务期映射url
+requestUrl=http://59.36.13.17:8081/test/
+#布控照片url
+bukongPic=http://10.73.7.249:13202/dynamic_control
+pictureUrl=/home/xguest/PhotoTest/
+#服务器映射url
+requestUrl=http://10.73.93.49:8081/picture/
+#人脸接口url
+faceUrl=http://100.112.1.33:13202/dynamic_control
+#人脸接口说明字段
+action=
+#人脸库id（48@DEFAULT 测试库） 正式库 231@DEFAULT
+repository_id=48@DEFAULT
+#图片存放文件夹名称
+fileUrl=D:/PhotoTest/
+

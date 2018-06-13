@@ -1,0 +1,11 @@
+package com.zngk.dao;
+
+public interface WifiDao {
+
+	void saveWifi(String sql,boolean flag);
+	
+	int update(String updSql,Object[] param,int[] types);
+	
+	public abstract void add(String sqlStr,Object[] params,int[] types);
+
+}

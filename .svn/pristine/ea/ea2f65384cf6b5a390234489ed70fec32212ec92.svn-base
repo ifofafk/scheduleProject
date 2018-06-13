@@ -1,0 +1,45 @@
+package com.zngk.service;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.zngk.entity.User;
+
+
+public interface ToLogonService {
+	
+	
+	/**
+	 * 查询登录用户信息
+	 * @param username
+	 * @param password
+	 * @return
+	 */
+	public Map<String, Object> longonPasswrod(String username,String password);
+	
+  /**
+   * 转换用户权限信息
+   * @param mapinfo
+   * @return
+   */
+	public User serchUserinfo(Map<String,Object> mapinfo);
+
+	/**
+	 * 
+	 * @param request  登录请求
+	 * @param mapinfo  用户信息
+	 * @return
+	 */
+	public void loginLog(HttpServletRequest request, Map<String, Object> mapinfo, int type);
+	
+	/**
+	 * 外部接口使用伪登录
+	 * @param httpSession
+	 * @param username
+	 * @return
+	 */
+	public void jkLogin(HttpServletRequest request, HttpSession httpSession, String username);
+	
+}

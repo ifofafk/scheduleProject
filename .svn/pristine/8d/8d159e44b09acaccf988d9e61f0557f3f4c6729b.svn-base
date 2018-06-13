@@ -1,0 +1,14 @@
+package com.zngk.service;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+
+public interface PowerService {
+
+    public void wifiList(HttpSession httpSession, HttpServletRequest request);
+    
+    public void buKongWifiList(HttpSession httpSession, HttpServletRequest request);
+    
+
+}

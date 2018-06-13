@@ -1,0 +1,102 @@
+package com.zngk.service.impl;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.PersonPmDao;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.PowerService;
+
+@Service
+@Transactional
+public class PowerServiceImpl implements PowerService {
+
+
+	@Autowired
+	private PersonPmDao personPmDao;
+
+	
+	
+	@Override
+    public void wifiList(HttpSession httpSession, HttpServletRequest request)
+    {
+    	String wifiSql = "select distinct ryxm xm,sfzbh sfzh ,phone_no sjh,mac_no mac ,regionare qy,cjsj from t_importantpeople_wirelesspp "
+    			+ "where 1=1 ";
+    	//ryxm like ('%?%') and sfzbh like('%?%') and phone_no like('%?%') and mac_no like('%?%')
+    	String xm = request.getParameter("xm");
+    	String sfzh = request.getParameter("sfzh");
+    	String sjh = request.getParameter("sjh");
+    	String mac = request.getParameter("mac");
+    	request.setAttribute("xm", xm);
+    	request.setAttribute("sfzh", sfzh);
+    	request.setAttribute("sjh", sjh);
+    	request.setAttribute("mac", mac);
+    	StringBuilder builder = new StringBuilder();
+    	if(xm!=null&!"".equals(xm)){
+    		builder.append(" and ryxm like ('%"+xm+"%')");
+    	}
+    	if(sjh!=null&!"".equals(sjh)){
+    		builder.append(" and phone_no like ('%"+sjh+"%')");
+    	}
+    	if(sfzh!=null&!"".equals(sfzh)){
+    		builder.append(" and sfzbh like ('%"+sfzh+"%')");
+    	}
+    	if(mac!=null&!"".equals(mac)){
+    		builder.append(" and mac_no like ('%"+mac+"%')");
+    	}
+    	builder.append(" order by cjsj desc ");
+		//所有的数据存放到分页中
+    	UserCenterPage userCenterPage= personPmDao.controlWifiList(request,wifiSql+builder.toString());
+    	System.out.println(wifiSql);
+    	request.setAttribute("userCenterPage1", userCenterPage);
+        request.setAttribute("getMeList", userCenterPage.getMapList());
+    }
+	
+	@Override
+    public void buKongWifiList(HttpSession httpSession, HttpServletRequest request)
+    {
+    	String wifiSql = "select zkid , xm, sfzh , sjh, mac,yy,operator_date sj from t_wifi_bk "
+    			+ "where 1=1 ";
+    	//ryxm like ('%?%') and sfzbh like('%?%') and phone_no like('%?%') and mac_no like('%?%')
+    	String xm = request.getParameter("xm");
+    	String sfzh = request.getParameter("sfzh");
+    	String sjh = request.getParameter("sjh");
+    	String mac = request.getParameter("mac");
+    	String state = request.getParameter("state");
+    	if(state==null||"".equals(state)){
+    		//给状态赋默认值
+    		state = "0";
+    	}
+    	request.setAttribute("xm", xm);
+    	request.setAttribute("sfzh", sfzh);
+    	request.setAttribute("sjh", sjh);
+    	request.setAttribute("mac", mac);
+    	request.setAttribute("zkstate", state);
+    	StringBuilder builder = new StringBuilder();
+    	builder.append(" and zt ='" +state+"' ");
+    	if(xm!=null&!"".equals(xm)){
+    		builder.append(" and xm like ('%"+xm+"%')");
+    	}
+    	if(sjh!=null&!"".equals(sjh)){
+    		builder.append(" and sjh like ('%"+sjh+"%')");
+    	}
+    	if(sfzh!=null&!"".equals(sfzh)){
+    		builder.append(" and sfzh like ('%"+sfzh+"%')");
+    	}
+    	if(mac!=null&!"".equals(mac)){
+    		builder.append(" and mac_no like ('%"+mac+"%')");
+    	}
+    	builder.append(" order by sj desc ");
+		//所有的数据存放到分页中
+    	UserCenterPage userCenterPage= personPmDao.controlList(request, wifiSql+builder.toString());
+    	System.out.println(wifiSql);
+    	request.setAttribute("userCenterPage1", userCenterPage);
+        request.setAttribute("getMeList", userCenterPage.getMapList());
+    }
+	
+	
+}

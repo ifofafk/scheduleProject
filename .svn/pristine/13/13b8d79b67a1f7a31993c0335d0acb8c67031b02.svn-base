@@ -1,0 +1,20 @@
+package com.zngk.dao.imp;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.WifiDao;
+import com.zngk.util.PubMethod;
+@Repository
+public class WifiDaoImpl extends AbstractDao implements WifiDao{
+
+	@Override
+	public void saveWifi(String sql,boolean flag) {
+		add(sql);
+		HttpSession session = PubMethod.getSession();
+		if(flag)
+		operationLogUtil.recordLog(session, "1", "wifi布控人员", null, "执行wifi布控操作");
+	}
+
+}

@@ -1,0 +1,20 @@
+package com.zngk.dao.imp;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.RlsbDao;
+import com.zngk.util.PubMethod;
+@Repository
+public class RlsbDaoImpl extends AbstractDao implements RlsbDao{
+
+	@Override
+	public void saveRlsb(String sql,boolean flag) {
+		add(sql);
+		HttpSession session = PubMethod.getSession();
+		if(flag)
+		operationLogUtil.recordLog(session, "1", "人脸布控人员", null, "人脸布控人员操作");
+	}
+
+}

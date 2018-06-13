@@ -1,0 +1,15 @@
+package com.zngk.dao;
+
+public interface ZkRyjbxxDao{
+	/**
+	 * 执行删除sql
+	 * @param delSql
+	 * @param param
+	 * @param types
+	 * @return
+	 */
+	public int delete(String zkno);
+	
+	
+	
+}

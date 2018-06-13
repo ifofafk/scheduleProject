@@ -1,0 +1,204 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 布控表单
+ */
+public class BkDTO implements Serializable {
+
+	private static final long serialVersionUID = -8651423134174442449L;
+
+	//导入操作编号. 上传完了返回的
+	private String drczno;
+	
+	//资源范围:  1上网   2旅馆  3火车  4民航订座 (飞机) 5民航进港(飞机)  6 长途客车 
+	private String zyfw;
+	
+	//地域范围 (当选择为火车 飞机时使用，始发地武汉，终点站dyfw)
+	private String dyfw;
+	
+	//用户姓名
+	private String userName;
+	
+	//身份证号
+	private String sfzh;
+	
+	//户籍地
+	private String hjd;
+
+	//人员类型
+	private String rylx;
+	
+	//布控开始时间
+	private String startTime;
+	
+	//布控开始时间
+	private String endTime;
+	
+	//网吧地域范围
+	private String wbdyfw;
+	
+	//旅店地域范围
+	private String lvdyfw;
+	
+	//布控原因
+	private String bkyy;
+	
+	//接收人警号
+	private String jsrjh;
+	
+	//接收人姓名
+	private String jsrxm;
+
+	//接收人手机
+	private String jsrsjh;
+	
+	//是否外部调用
+	private int jkFlag;
+
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	public String getZyfw() {
+		return zyfw;
+	}
+
+	public void setZyfw(String zyfw) {
+		this.zyfw = zyfw;
+	}
+
+	public String getDyfw() {
+		return dyfw;
+	}
+
+	public void setDyfw(String dyfw) {
+		this.dyfw = dyfw;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+	public String getSfzh() {
+		return sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+
+	public String getHjd() {
+		return hjd;
+	}
+
+	public void setHjd(String hjd) {
+		this.hjd = hjd;
+	}
+
+	public String getRylx() {
+		return rylx;
+	}
+
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getWbdyfw() {
+		return wbdyfw;
+	}
+
+	public void setWbdyfw(String wbdyfw) {
+		this.wbdyfw = wbdyfw;
+	}
+
+	public String getLvdyfw() {
+		return lvdyfw;
+	}
+
+	public void setLvdyfw(String lvdyfw) {
+		this.lvdyfw = lvdyfw;
+	}
+
+	public String getBkyy() {
+		return bkyy;
+	}
+
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+
+	public String getJsrjh() {
+		return jsrjh;
+	}
+
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+
+	public String getJsrxm() {
+		return jsrxm;
+	}
+
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+
+	public String getJsrsjh() {
+		return jsrsjh;
+	}
+
+	public void setJsrsjh(String jsrsjh) {
+		this.jsrsjh = jsrsjh;
+	}
+
+	public int getJkFlag() {
+		return jkFlag;
+	}
+
+	public void setJkFlag(int jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+
+	@Override
+	public String toString() {
+		return "BkDTO [drczno=" + drczno + ", zyfw=" + zyfw + ", dyfw=" + dyfw + ", userName=" + userName + ", sfzh="
+				+ sfzh + ", hjd=" + hjd + ", rylx=" + rylx + ", startTime=" + startTime + ", endTime=" + endTime
+				+ ", wbdyfw=" + wbdyfw + ", lvdyfw=" + lvdyfw + ", bkyy=" + bkyy + ", jsrjh=" + jsrjh + ", jsrxm="
+				+ jsrxm + ", jsrsjh=" + jsrsjh + ", jkFlag=" + jkFlag + "]";
+	}
+
+	
+
+	
+	
+	
+	
+}

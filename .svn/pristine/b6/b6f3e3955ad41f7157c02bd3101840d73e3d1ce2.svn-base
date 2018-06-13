@@ -1,0 +1,51 @@
+package com.zngk.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.entity.DataType;
+import com.zngk.entity.PublicData;
+import com.zngk.entity.ResultGson;
+/**
+ * 下拉框字典公共接口
+ * @author 熊铸
+ *ZNGK
+ * 2017年10月18日
+ */
+
+@Controller
+@SuppressWarnings("all")
+@RequestMapping(value="dic")
+public class DictionaryController {
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	@RequestMapping(value="/queryDictionary",method = {RequestMethod.GET})
+	@ResponseBody
+	@ApiOperation(value="下拉框字典公共接口",httpMethod="GET",notes="下拉框字典公共接口",response=ResultGson.class)
+	public ResultGson queryDictionary(@RequestParam (value="code")String code){
+		ResultGson resultGson = new ResultGson();
+		List<Map<String,Object>> list =null;
+		try{
+			String sql = "select name,value,sequence from system_code_item where state=1 and code_id=(select id from system_code  where code='"+code+"' and rownum=1) order by sequence asc";
+			 list = jdbcTemplate.queryForList(sql);
+			 if(list==null||list.size()==0){
+				 resultGson.error400("服务器异常!");
+			 }
+			 resultGson = resultGson.ok(list);
+		}catch (Exception e) {
+			resultGson.error400("服务器异常!");
+			e.printStackTrace();
+		}
+		return resultGson;
+	}
+
+}

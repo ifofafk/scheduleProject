@@ -1,0 +1,101 @@
+package com.zngk.dao.imp;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.OperationDao;
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.dto.LoginLogsDto;
+import com.zngk.dto.OperationLogsDto;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.UserCenterPage;
+/**
+ * 
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月6日
+ */
+@Repository
+public class OperationDaoImpl extends AbstractDao implements OperationDao{
+
+	@Override
+	public ResultGson queryLoginList(InputPageDataDTO<LoginLogsDto> data) {
+		ResultGson resultGson =null;
+		try{
+			StringBuilder sql = new StringBuilder("select user_name,to_char(login_date,'yyyy-mm-dd hh24:mi:ss')login_date,decode(type,'1','登录','0','退出')logintype,ip,remark from system_login_log t where user_name is not null ");
+			LoginLogsDto logsDto = data.getData();
+			String name = logsDto.getName();
+			String ip = logsDto.getIp();
+			String startTime = logsDto.getStartTime();
+			String endTime = logsDto.getEndTime();
+			if(name!=null&&!"".equals(name)){
+				sql.append( " and user_name like ('%"+name.trim()+"%')");
+			}
+			if(ip!=null&&!"".equals(ip)){
+				sql.append( " and ip like ('%"+ip.trim()+"%')");
+			}
+			if(startTime!=null&&!"".equals(startTime)){
+				sql.append( " and to_char(login_date,'yyyy-mm-dd hh24:mi:ss') >= '"+startTime+"'");
+			}
+			if(endTime!=null&&!"".equals(endTime)){
+				sql.append( " and to_char(login_date,'yyyy-mm-dd hh24:mi:ss') <= '"+endTime+"'");
+			}
+			sql.append(" order by login_date desc");
+			UserCenterPage userCenterPage = this.controlYjxxList(data.getPageNum()==null?0:data.getPageNum(), data.getPageSize()==null?10:data.getPageSize(), sql.toString());
+			Map map = new HashMap();
+			map.put("pageNum", data.getPageNum());
+			map.put("pageTotal", userCenterPage.getAllRecordNO());
+			map.put("list", userCenterPage.getMapList());
+			resultGson = ResultGson.ok(map);
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+			resultGson = new ResultGson().error500(e.getMessage());
+		}
+		return resultGson;
+	}
+
+	@Override
+	public ResultGson queryOperationList(InputPageDataDTO<OperationLogsDto> data) {
+		ResultGson resultGson =null;
+		try{
+			StringBuilder sql = new StringBuilder("select t.user_accout,to_char(t.operating_date,'yyyy-mm-dd hh24:mi:ss') operating_date,ip,module,t.operating_info,remark from system_operating_log t where 1=1 ");
+			OperationLogsDto operationLogsDto = data.getData();
+			String name = operationLogsDto.getName();
+			String ip = operationLogsDto.getIp();
+			String startTime = operationLogsDto.getStartTime();
+			String endTime = operationLogsDto.getEndTime();
+			String lx = operationLogsDto.getLx();
+			if(name!=null&&!"".equals(name)){
+				sql.append( " and user_accout like ('%"+name.trim()+"%')");
+			}
+			if(ip!=null&&!"".equals(ip)){
+				sql.append( " and ip like ('%"+ip.trim()+"%')");
+			}
+			if(startTime!=null&&!"".equals(startTime)){
+				sql.append( " and to_char(operating_date,'yyyy-mm-dd hh24:mi:ss') >= '"+startTime+"'");
+			}
+			if(endTime!=null&&!"".equals(endTime)){
+				sql.append( " and to_char(operating_date,'yyyy-mm-dd hh24:mi:ss') <= '"+endTime+"'");
+			}
+			if(lx!=null&&!"".equals(lx)){
+				sql.append( " and operation_type = '"+lx+"'");
+			}
+			sql.append(" order by t.operating_date desc");
+			UserCenterPage userCenterPage = this.controlYjxxList(data.getPageNum()==null?0:data.getPageNum(), data.getPageSize()==null?10:data.getPageSize(), sql.toString());
+			Map map = new HashMap();
+			map.put("pageNum", data.getPageNum());
+			map.put("pageTotal", userCenterPage.getAllRecordNO());
+			map.put("list", userCenterPage.getMapList());
+			resultGson = ResultGson.ok(map);
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+			resultGson = new ResultGson().error500(e.getMessage());
+		}
+		return resultGson;
+	}
+
+}

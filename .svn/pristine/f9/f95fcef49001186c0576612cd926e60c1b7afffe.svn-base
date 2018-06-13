@@ -1,0 +1,574 @@
+package com.zngk.util;
+
+import java.io.*;
+import java.net.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
+import com.zngk.common.Singleton;
+import com.zngk.common.compent.Constant;
+import com.zngk.common.compent.RSA;
+import com.zngk.entity.User;
+
+public class ZKDXUtil {
+	// 获取日期
+	public static String getDate() {
+		String date = "";
+		Date date1 = new Date();
+		Calendar c = Calendar.getInstance();
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		date = sf.format(c.getTime());
+		return date;
+	}
+
+	// 权限判断生成智控对象处理sql语句
+	public static String clPriSql(User user) {
+		String psql = "";
+
+		// 当前用户所属单位代码
+		String jgdm = user.getDepartmentCode();
+		// 当前用户是否是管理员用户   
+		String gly = user.getGly().trim();//xl  2017-09-04 去空格
+
+		if (user.getAccount().equals(Singleton.SystemStr) || user.getAccount().equals(Singleton.SjglyStr)) {// 系统管理员和市局管理员可以看到所有接警信息
+
+		} else {
+			if (jgdm.substring(4, 12).equals(Singleton.SjjgdmStr)
+					&& gly.equals(String.valueOf("1"))) {// 市局
+				psql = "  and substr(sqrdwdm, 0, 4) = '" + jgdm.substring(0, 4)
+						+ "'";
+			} else if (jgdm.substring(4, 12).equals(Singleton.SjjgdmStr)
+					&& gly.equals(String.valueOf("0"))) {
+				psql = " and sqrjh = '" + user.getAccount() + "'";
+			}
+
+			else if (jgdm.equals("420184000000") || jgdm.equals("420113000000")) { // 特指汉南和经开分局
+				psql = "  and substr(sqrdwdm,0,6) in ('420184','420113') ";
+			} else if (jgdm.equals("420181000000")
+					&& gly.equals(String.valueOf("1"))) { // 特指内保分局管理员
+				psql = "  and substr(sqrdwdm,0,6) = '420181' ";
+			} else if (jgdm.equals("420181000000")
+					&& gly.equals(String.valueOf("0"))) {// 特指内保分局普通用户
+				psql = " and sqrjh = '" + user.getAccount() + "'";
+			} else if (jgdm.substring(6, 12).equals(Singleton.FjjgdmStr)) {// 其他分局
+				psql = "  and substr(sqrdwdm, 0, 6) = '" + jgdm.substring(0, 6)
+						+ "' ";
+
+			} else if (jgdm.substring(8, 12).equals(Singleton.PcsjgdmStr)) {// 派出所
+				if (gly.equals(String.valueOf("1"))) {// 派出所管理员可见本单位所有接警信息
+					psql = " and sqrdwdm = '" + jgdm + "'";
+				} else {
+					psql = " and sqrjh = '" + user.getAccount() + "' ";
+
+				}
+			} else {// 警务工作站
+				if (gly.equals(String.valueOf("1"))) {// 警务工作站管理员可见本单位所有视频
+					psql = " and sqrdwdm = '" + jgdm + "'";
+				} else {
+					psql = " and sqrjh = '" + user.getAccount() + "' ";
+				}
+
+			}
+
+		}
+		return psql;
+	}
+
+	// 权限判断生成接警信息处理sql语句
+	public static String newclPriSql(User user) {
+		String psql = "";
+
+		// 当前用户所属单位代码
+		String jgdm = user.getDepartmentCode();
+		// 当前用户是否是管理员用户
+		String gly = user.getGly();
+
+		if (user.getAccount().equals(Singleton.SystemStr)) {// 系统管理员可以看到所有接警信息
+
+		} else {
+			if (jgdm.substring(4, 12).equals(Singleton.SjjgdmStr)
+					&& gly.equals(String.valueOf("1"))) {// 市局
+				psql = "  where substr(fkdwdm, 0, 4) = '"
+						+ jgdm.substring(0, 4) + "'";
+			} else if (jgdm.substring(4, 12).equals(Singleton.SjjgdmStr)
+					&& gly.equals(String.valueOf("0"))) {
+				psql = " where where fkdwdm = '" + jgdm + "'";
+			}
+
+			else if (jgdm.equals("420184000000") || jgdm.equals("420113000000")) { // 特指汉南和经开分局
+				psql = "  where substr(fkdwdm,0,6) in ('420184','420113') ";
+			} else if (jgdm.equals("420181000000")
+					&& gly.equals(String.valueOf("1"))) { // 特指内保分局管理员
+				psql = "  where substr(fkdwdm,0,6) = '420181' ";
+			} else if (jgdm.equals("420181000000")
+					&& gly.equals(String.valueOf("0"))) {// 特指内保分局普通用户
+				psql = " where fkdwdm = '" + jgdm + "'";
+			} else if (jgdm.substring(6, 12).equals(Singleton.FjjgdmStr)) {// 其他分局
+				psql = "  where substr(fkdwdm, 0, 6) = '"
+						+ jgdm.substring(0, 6) + "' ";
+
+			} else if (jgdm.substring(8, 12).equals(Singleton.PcsjgdmStr)) {// 派出所
+				/*
+				 * if(gly.equals(String.valueOf("1"))) {//派出所管理员可见本单位所有接警信息 psql
+				 * = " where jjdw = '" + jgdm + "'"; } else { psql =
+				 * " where jjrxm = '" + user.getName() + "' ";
+				 * 
+				 * }
+				 */
+				psql = " where fkdwdm = '" + jgdm + "'";
+			} else {// 警务工作站
+				/*
+				 * if(gly.equals(String.valueOf("1"))){//警务工作站管理员可见本单位所有接警信息
+				 * psql =
+				 * " where jjdw in (select pcsjgdm from USER_JWZ_PCS where jwzjgdm='"
+				 * + jgdm + "')"; }else{ psql = " where jjrxm = '" +
+				 * user.getName() + "'"; }
+				 */
+				psql = " where fkdwdm in (select pcsjgdm from USER_JWZ_PCS where jwzjgdm='"
+						+ jgdm + "')";
+			}
+
+		}
+
+		return psql;
+
+	}
+
+	// 权限判断生成接警信息编辑sql语句
+	public static String spPriSql(User user) {
+		String psql = "";
+
+		String jgdm = user.getDepartmentCode();
+		String gly = user.getGly();
+
+		if (user.getAccount().equals(Singleton.SystemStr)) {
+
+		} else {
+			if (jgdm.substring(4, 12).equals(Singleton.SjjgdmStr)) {// 市局
+
+			} else if (jgdm.equals("420113000000")
+					|| jgdm.equals("420184000000")) {// 特指汉南和经开分局
+				psql = "  where substr(jjdw,0,6) in ('420184','420113') ";
+			} else if (jgdm.substring(6, 12).equals(Singleton.FjjgdmStr)) {// 分局
+				psql = "  where substr(jjdw, 0, 6) = '" + jgdm.substring(0, 6)
+						+ "'";
+
+			} else if (jgdm.substring(8, 12).equals(Singleton.PcsjgdmStr)) {// 派出所
+				if (gly.equals(String.valueOf("1"))) {// 派出所管理员
+					psql = " where  jjdw = '" + jgdm + "'";
+				} else {
+					psql = " where jjrxm = '" + user.getName() + "'";
+
+				}
+
+			} else {// 警务站管理员
+				if (gly.equals(String.valueOf("1"))) {// 警务站管理员
+					psql = " where  jjdw = '" + jgdm + "'";
+				} else {
+					psql = " where jjrxm = '" + user.getName() + "'";
+				}
+			}
+
+		}
+
+		return psql;
+	}
+
+	public boolean isGLY(User user) {
+		if ("1".equals(user.getGly())) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static String yhsf(User user) {
+		String yhsf = "";
+		if (Singleton.SjjgdmStr.equals(user.getDepartmentCode()
+				.substring(4, 12))) {
+			yhsf = "sjgly";
+		} else if (Singleton.FjjgdmStr.equals(user.getDepartmentCode()
+				.substring(6, 12))) {
+			yhsf = "fjgly";
+		} else {
+			if ("1".equals(user.getGly())) {
+				yhsf = "pcsgly";
+			} else {
+				yhsf = "ptyh";
+			}
+		}
+
+		return yhsf;
+	}
+
+	public String yhlb(User user) {
+		String yhsf = "";
+		if (Singleton.PcsjgdmStr.equals(user.getDepartmentCode().substring(8,
+				12))) {
+			yhsf = "sjgly";
+		} else if (Singleton.FjjgdmStr.equals(user.getDepartmentCode()
+				.substring(6, 12))) {
+			yhsf = "fjgly";
+		} else {
+			if ("1".equals(user.getGly())) {
+				yhsf = "pcsgly";
+			} else {
+				yhsf = "ptyh";
+			}
+		}
+
+		return yhsf;
+	}
+
+	public static String md5String(String str) {
+		String result = "";
+
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] result_array = md.digest(str.getBytes());
+			result = new String(result_array);
+
+		} catch (NoSuchAlgorithmException e) {
+
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+	public static void main(String[] args) {
+		System.out.println(ConvettoStr("2016-01-27 16:39:22"));
+
+	}
+
+	public static String ConvettoStr(String str) {
+		str = str.replaceAll("-", "");
+		str = str.replaceAll(" ", "");
+		str = str.replaceAll(":", "");
+		return str;
+	}
+
+	public static boolean connectURL(String URL, String stationid,
+			String stationip, String filepath, String opeationtype,
+			String opeationuser, String k, String touser) {
+		String parameterData = "";
+		String parameterData_post = "";
+		String sign = "";
+
+		boolean b = false;
+
+		if (notEmpty(stationid)) {
+			parameterData += "stationid=" + stationid;
+			parameterData_post += "stationid=" + Encode(stationid);
+		}
+
+		if (notEmpty(stationip)) {
+			parameterData += "&stationip=" + stationip;
+			parameterData_post += "&stationip=" + Encode(stationip);
+		}
+
+		if (notEmpty(filepath)) {
+			parameterData += "&filepath=" + filepath;
+			parameterData_post += "&filepath=" + Encode(filepath);
+		}
+
+		if (notEmpty(opeationtype)) {
+			parameterData += "&opeationtype=" + opeationtype;
+			parameterData_post += "&opeationtype=" + Encode(opeationtype);
+		}
+
+		if (notEmpty(opeationuser)) {
+			parameterData += "&opeationuser=" + opeationuser;
+			parameterData_post += "&opeationuser=" + Encode(opeationuser);
+		}
+
+		if (notEmpty(touser)) {
+			parameterData += "&touser=" + touser;
+			parameterData_post += "&touser=" + Encode(touser);
+		}
+
+		if (notEmpty(k)) {
+			parameterData += "&k=" + k;
+			parameterData_post += "&k=" + Encode(k);
+		}
+
+		long time = System.currentTimeMillis();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+		Date date = new Date();
+		String t_date = sdf.format(date);
+		parameterData += "&t=" + t_date;
+		parameterData_post += "&t=" + Encode(t_date);
+
+		RSA rsa = new RSA();
+		sign = rsa
+				.sign(parameterData,
+						"MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAL0pM0Lx+Ig7DOyr4VrVdmkHqBM85teZhMJcSyxco+JwYEBx2a7uDfSpqD/o3IR21cWsxRJWPEF4uJeRc0SgQ5ynUJCvKqLkiBuzGf4noHjr4tTuP3pBMBHvGxpZDY2Ep20CXJQb/OpbgkFmUbcnBDfRVKMCxPlpAdVP6NQTrsEXAgMBAAECgYA8uDXxPlTl/faHHiFHlA/fZQrJqhn7iRb5gMDMq6wbqrDq3uDeayHlsHQGl8v5ZV/3hR75ZN8QsRyn4pOaqssot1bPja0ISFgjLdA6LJzppMOlZxYv19NfITuErqQAdLcmyGO9aLzyZV92R2RE8cC9SMHD0zrra0Ma9tf8pVE5KQJBAOw5qL/2dpF/+NJ/a5DJwZghEQT7Jaf3wnVn5CGgCvMTJ9kWuuj+aifcRarPCsHvFcwDRq4nc3RtL0xNeOykLHUCQQDM/vJL5n+qXSSLjKne2qGlWMTQoS5Z4KUvzUEqrbA32Xgqz9wjZroZHyFcY/2+nS6oil2SY3HZlVbhJQ4O1rXbAkANAxgSiub5GM2B+tbYAOUTFi8z0Qm/+NvTT8e3OnOf9Bwrzx64mtsKGw4TXJhBGoRe2odYLIAll6YVU+cnUdvJAkByvtJJggA8EF8AbgA36hFJSGMClPYpAQH1u+KaTRaybFxDOo5yknHg1fgKiz3hkIIpfSnbYya7MEitRdyUmcK5AkAJzoMDv1jALQXlmoHNDZYThGu1bnrgGecxka7zAYsCaMebToW1oPT9P2o+tq2qYHJCeRWkhR3ASOAavhosmxT/",
+						"utf-8");
+
+		parameterData_post += "&sign=" + Encode(sign);
+		try {
+			URL localURL = new URL(URL);
+			URLConnection connection;
+			HttpURLConnection httpURLConnection = null;
+			String server_result = "";
+			try {
+				connection = localURL.openConnection();
+
+				httpURLConnection = (HttpURLConnection) connection;
+				httpURLConnection.setDoOutput(true);
+				httpURLConnection.setRequestMethod("POST");
+				httpURLConnection.setRequestProperty("Accept-Charset", "utf-8");
+				httpURLConnection.setRequestProperty("Content-Type",
+						"application/x-www-form-urlencoded");
+				httpURLConnection.setRequestProperty("Content-Length",
+						String.valueOf(parameterData_post.length()));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			OutputStream outputStream = null;
+			OutputStreamWriter outputStreamWriter = null;
+			InputStream inputStream = null;
+			ByteArrayOutputStream baos = null;
+
+			try {
+				try {
+					outputStream = httpURLConnection.getOutputStream();
+					outputStreamWriter = new OutputStreamWriter(outputStream);
+
+					outputStreamWriter.write(parameterData_post.toString());
+					outputStreamWriter.flush();
+
+					inputStream = httpURLConnection.getInputStream();
+
+					baos = new ByteArrayOutputStream();
+
+					int i = -1;
+					while ((i = inputStream.read()) != -1) {
+						baos.write(i);
+					}
+
+					server_result = baos.toString();
+
+					baos.close();
+
+					if (server_result.indexOf("\"code\":\"200\"") != -1) {
+						b = true;
+					}
+
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			} finally {
+
+				if (outputStreamWriter != null) {
+					try {
+						outputStreamWriter.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+
+				if (outputStream != null) {
+					try {
+						outputStream.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+
+				if (inputStream != null) {
+					try {
+						inputStream.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+
+			}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return b;
+	}
+
+	public static boolean notEmpty(String str) {
+		if (str == null || str.equals("")) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	public static String Encode(String source) {
+		String result = "";
+
+		try {
+			result = URLEncoder.encode(source, "utf-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			result = source;
+		}
+
+		return result;
+	}
+
+	public static String converttoString(String str) {
+		str = str.replaceAll("-", "");
+		str = str.replaceAll(" ", "");
+		str = str.replaceAll(":", "");
+
+		return str;
+
+	};
+
+	public static String getTotalNum(String sql) {
+		sql = "select count(*) totalnum from (" + sql + ")";
+
+		return sql;
+	}
+
+	public static String fysql(int page, int pagesize, String basesql) {
+
+		String firstindex = String.valueOf(((page - 1) * pagesize));
+
+		String lastindex = String.valueOf(page * pagesize + 1);
+
+		basesql = "select * from (select fytable.*, rownum num from ( "
+				+ basesql;
+		basesql = basesql + ") fytable) where num > " + firstindex
+				+ " and num < " + lastindex;
+
+		return basesql;
+
+	}
+
+	public static String accurateMapping(String sql) {
+		sql = "select accuratetable.* from ( " + sql;
+		sql = sql + ")accuratetable order by accuratetable.space asc ";
+
+		return sql;
+
+	}
+
+	public static String dateSpacing(String type, int spacing,
+			String targetdatestr) {
+		Calendar calendar = Calendar.getInstance();
+		Date targetdate = null;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+
+		try {
+			targetdate = sdf.parse(targetdatestr);
+			calendar.setTime(targetdate);
+		} catch (ParseException e) {
+
+			e.printStackTrace();
+		}
+		if (type.equals(Constant.YEAR)) {
+
+		} else if (type.equals(Constant.MONTH)) {
+
+		} else if (type.equals(Constant.DAY)) {
+			calendar.add(Calendar.DAY_OF_YEAR, spacing);
+
+		} else if (type.equals(Constant.HOUR)) {
+			calendar.add(Calendar.HOUR_OF_DAY, spacing);
+		} else {
+
+		}
+
+		return sdf.format(calendar.getTime());
+
+	}
+
+	// 根据当前的 用户和前台传来的审批意见，获取最终写入数据库的审批意见
+
+	public static String getSpyj(String jgmc, String spyj, boolean flag) {
+
+		if (flag) {
+			return jgmc + " : " + spyj;
+		} else {
+			return jgmc + spyj;
+		}
+
+	};
+	
+	
+	  
+	/**
+	 * 权限判断生成智控对象处理sql语句  2017-11-14
+	 * @param user 当前用户
+	 * @return
+	 */
+	public static String createPriSql(User user) {
+		String psql = "";
+		// 当前用户所属单位代码
+		String jgdm = user.getDepartmentCode();
+//		// 当前用户是否管理员用户   
+//		String gly = user.getGly().trim();
+		// 用户角色列表
+		List roleList = user.getRoleList();
+		// 系统管理员system，admin和市局管理员sjgly 角色可以看到所有接警信息
+		if(roleList.contains("ADMIN") || roleList.contains("SYSTEM") || roleList.contains("SJGLY")){
+			
+		//分局和派出所及以下	
+		} else {
+			if(roleList.contains("FJGLY")){
+				psql = " and substr(sqrdwdm, 0, 6) = '" + jgdm.substring(0, 6) + "' ";
+			} else if (roleList.contains("PCSGLY")) {
+				psql = " and substr(sqrdwdm, 0, 8) = '" + jgdm.substring(0, 8) + "' ";
+			} else {
+				psql = " and sqrjh = '" + user.getAccount() + "' ";
+			}
+		}
+		//数据问题:警务站在组织机构表里不存在
+
+		//对比原来的clPriSql(User user)
+		return psql;
+	}
+	
+	/**
+	 * 根据当前用户获取审批级别 (!注意审批级别和查看级别目前在市局普通用户上有区别)
+	 * 如果当前为2，就终审完了。走审批的时候最低审批级别为1(一审)
+	 * -1则该用户有问题，没有角色列表，抛异常
+	 * @param user
+	 * @return
+	 */
+	public static Integer getSPjb(User user) {
+		List roleList = user.getRoleList();
+		Integer spjb = 1;//默认(派出所普通用户  分局普通用户 为1)
+		if(user.getRoleList() != null && !user.getRoleList().isEmpty()) {
+			
+			//市局管理员以上角色为2级审批，目前的终审
+			if(user.getRoleList() != null && (user.getRoleList().contains("SJGLY") || user.getRoleList().contains("SYSTEM") || user.getRoleList().contains("ADMIN"))){
+				spjb = 3;
+				return spjb;
+			}
+			//市局PTYH  || 派出所管理员 || 分局管理员  只有2审
+			//此处需注意市PTYH的审批级别为2，他的流转下一级单位还是自己，他布控需要gly审批
+			if((user.getDepartmentCode().lastIndexOf(Singleton.SjjgdmStr) > 0 & roleList.contains("PTYH")) || roleList.contains("PCSGLY") || roleList.contains("FJGLY") ) {
+				spjb = 2;
+				return spjb;
+			}
+		}else{
+			return -1;
+		}
+		return spjb;
+	}
+
+}

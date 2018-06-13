@@ -1,0 +1,34 @@
+package com.zngk.entity;
+
+public class PagePublicData {
+	private Integer pageNum ;
+	private Integer pageTotal;
+	private Object data ;
+	private Object type;
+	
+	public Integer getPageNum() {
+		return pageNum;
+	}
+	public void setPageNum(Integer pageNum) {
+		this.pageNum = pageNum;
+	}
+	public Integer getPageTotal() {
+		return pageTotal;
+	}
+	public void setPageTotal(Integer pageTotal) {
+		this.pageTotal = pageTotal;
+	}
+	public Object getData() {
+		return data;
+	}
+	public void setData(Object data) {
+		this.data = data;
+	}
+	public Object getType() {
+		return type;
+	}
+	public void setType(Object type) {
+		this.type = type;
+	}
+	
+}

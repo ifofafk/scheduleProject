@@ -1,0 +1,26 @@
+package com.zngk.entity;
+
+
+public abstract class AbstractDomain implements IDomain {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 734773154448302398L;
+
+	/**
+	 * @param domain
+	 */
+	public IDomain beforeImportSave(IDomain domain){
+		
+		return domain;
+	}
+	
+	/**
+	 * @param domain
+	 */
+	public String beforeImportValidate(IDomain domain){
+		
+		return null;
+	}
+}

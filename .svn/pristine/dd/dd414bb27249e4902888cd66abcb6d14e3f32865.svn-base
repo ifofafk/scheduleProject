@@ -1,0 +1,139 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 创建审批表DTO
+ */
+public class SpDTO implements Serializable {
+
+	private static final long serialVersionUID = 5170900387987672736L;
+
+	// 审批编号
+	private String spno;
+	
+	// 审批对象
+	private Integer spdx;
+	
+	// 审批对编号   身份证  车牌  MAC地址
+	private String spdxbh;
+	
+	// 审批状态
+	private Integer spzt;
+	
+	// 申请说明(布控原因)
+	private String sqsm;
+	
+	// 申请人姓名(对应各级)
+	private String sprxm;
+	
+	// 申请人警号(对应各级)
+	private String sprjh;
+	
+	// 申请人单位名称(对应各级)
+	private String sprdwmc;
+	
+	// 申请时间(审批记录创建时间对应各级的审批时间)
+	private String spsj;
+	
+	// 审批流转id(对应各级)
+	private String spFlowId;
+
+	// 智控结束时间
+	private String ryzkjssj;
+	
+	public String getSpno() {
+		return spno;
+	}
+
+	public void setSpno(String spno) {
+		this.spno = spno;
+	}
+
+	public Integer getSpdx() {
+		return spdx;
+	}
+
+	public void setSpdx(Integer spdx) {
+		this.spdx = spdx;
+	}
+
+	public String getSpdxbh() {
+		return spdxbh;
+	}
+
+	public void setSpdxbh(String spdxbh) {
+		this.spdxbh = spdxbh;
+	}
+
+	public Integer getSpzt() {
+		return spzt;
+	}
+
+	public void setSpzt(Integer spzt) {
+		this.spzt = spzt;
+	}
+
+	public String getSqsm() {
+		return sqsm;
+	}
+
+	public void setSqsm(String sqsm) {
+		this.sqsm = sqsm;
+	}
+
+	public String getSprxm() {
+		return sprxm;
+	}
+
+	public void setSprxm(String sprxm) {
+		this.sprxm = sprxm;
+	}
+
+	public String getSprjh() {
+		return sprjh;
+	}
+
+	public void setSprjh(String sprjh) {
+		this.sprjh = sprjh;
+	}
+
+	public String getSprdwmc() {
+		return sprdwmc;
+	}
+
+	public void setSprdwmc(String sprdwmc) {
+		this.sprdwmc = sprdwmc;
+	}
+
+	public String getSpsj() {
+		return spsj;
+	}
+
+	public void setSpsj(String spsj) {
+		this.spsj = spsj;
+	}
+
+	public String getSpFlowId() {
+		return spFlowId;
+	}
+
+	public void setSpFlowId(String spFlowId) {
+		this.spFlowId = spFlowId;
+	}
+
+	public String getRyzkjssj() {
+		return ryzkjssj;
+	}
+
+	public void setRyzkjssj(String ryzkjssj) {
+		this.ryzkjssj = ryzkjssj;
+	}
+
+	
+	
+	
+	
+}

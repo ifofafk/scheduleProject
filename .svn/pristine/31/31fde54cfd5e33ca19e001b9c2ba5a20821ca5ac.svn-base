@@ -1,0 +1,113 @@
+package com.zngk.dao.imp;
+
+import java.util.List;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.PersonAdDao;
+import com.zngk.dto.PersonDto;
+import com.zngk.dto.PersonInfodto;
+import com.zngk.exception.ServiceException;
+import com.zngk.util.DesCryptUtil;
+import com.zngk.util.PubMethod;
+@Repository
+public class PersonAdDaoImpl extends AbstractDao implements PersonAdDao{
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	
+	@Value("${encryptionKey}")
+    private String encryptionKey; //密钥
+	
+	//执行更新的操作
+		@Override
+		public int personUpdate(HttpSession httpSession, PersonDto personDto) {
+			int flag = 0;//判断
+			
+			String oldJh = personDto.getOldJh();//旧警号
+			String newJh=personDto.getNewJh();//警号
+			String yhxm=personDto.getYhxm();//用户姓名
+			String sfzh=personDto.getSfzh();//身份证号
+			String szdwdm=personDto.getSzdwdm();//所在单位代码
+			String power=personDto.getPower().trim();//用户权限
+			
+			//对管理员进行判断
+			String jsdm = "PTYH";
+			if("1".equals(power)){
+				jsdm = PubMethod.getYhsf(szdwdm);
+			}
+			operationLogUtil.recordLog(httpSession, "3", "人员档案", "在人员档案模块进行了用户编辑操作");
+			
+			//因为主外键级联更新很麻烦，所以代码比较恶心
+			String sql = " delete from NEW_YHJSB where YHM='" +oldJh+ "'";//删除旧警号
+			flag = jdbcTemplate.update(sql);
+			if(flag != 0){
+				sql = " update NEW_YHXXB set YHM ='"+newJh+"',YHXM='"+yhxm+"',JGDM='"+szdwdm+"',GLY='"+power+"',SFZH='"+sfzh +"' where YHM ='"+oldJh+"'";
+				flag = jdbcTemplate.update(sql);
+				if(flag != 0){
+					sql = " insert into new_yhjsb (id,jsdm,yhm) values (SEQ_NEW_YHJSB.Nextval, '" +jsdm+ "', '" +newJh+ "') ";
+					flag = jdbcTemplate.update(sql);
+				}
+			}
+			return flag;
+		}
+		
+		@Override
+		public int updateByJhkl(String yhm, String kl,HttpSession httpSession) {
+			String sql = " update NEW_YHXXB set kl='" + kl + "' where yhm='" + yhm + "'";
+			operationLogUtil.recordLog(httpSession, "3", "人员档案模块", yhm, "进行了修改密码操作!");
+			return jdbcTemplate.update(sql);
+		}
+		
+		 //用户注册
+		@Override
+		public int personSave(PersonInfodto personInfodto,HttpSession httpSession) {
+			int roleSaveRes = 0;//判断
+			
+			String jh=personInfodto.getJh();//警号
+			String yhxm=personInfodto.getYhxm();//用户姓名
+			String sfzh=personInfodto.getSfzh();//身份证号
+			String szdwdm=personInfodto.getSzdwdm();//所在单位
+			String power=personInfodto.getPower();//用户权限
+			
+			//先判断警号已经存在
+			String beforeSql = "select * from NEW_YHXXB where yhm='" + jh + "'";
+			List list = jdbcTemplate.queryForList(beforeSql);
+			if(list != null && !list.isEmpty()){
+				roleSaveRes = 9;
+				return roleSaveRes;
+			}
+			
+			//对管理员进行判断
+			String jsdm = "PTYH";
+			if("1".equals(power)){
+				jsdm = PubMethod.getYhsf(szdwdm);
+			}
+			// 用户默认密码
+			DesCryptUtil des;
+			String kl = "";
+			try {
+				des = new DesCryptUtil(encryptionKey);
+				kl = des.encrypt("11");
+			} catch (Exception e) {
+				throw new ServiceException("false","系统执行错误");
+			}
+						
+			
+			//执行的sql语句
+			String sql=" insert into NEW_YHXXB (YHM,KL,YHXM,JGDM,GLY,SFZH) values ('"+jh+"','" +kl+ "','"+yhxm+"','"+szdwdm+"','"+power+"','"+sfzh+"')";
+			roleSaveRes = jdbcTemplate.update(sql);
+			
+			//给用户添加角色
+			String jsSql = " insert into NEW_YHJSB (ID, JSDM, YHM) values (SEQ_NEW_YHJSB.Nextval, '" +jsdm+ "', '" +jh+ "')";
+			jdbcTemplate.update(jsSql);
+			operationLogUtil.recordLog(httpSession, "1", "人员档案模块", jh, "进行了新增用户操作");
+			
+			return roleSaveRes;
+		}
+
+}

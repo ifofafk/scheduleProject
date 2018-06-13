@@ -1,0 +1,88 @@
+package com.zngk.dao.imp;
+
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.YjcxServiceDao;
+import com.zngk.dto.YjcxDto;
+import com.zngk.entity.DataType;
+import com.zngk.entity.PagePublicData;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.util.ZKDXUtil;
+@Repository
+public class YjcxServiceDaoImpl extends AbstractDao implements YjcxServiceDao{
+
+	public PagePublicData queryYjxxList(YjcxDto yjcxDto, User user) {
+//		HttpSession session = PubMethod.getSession();
+//		User user = (User) session.getAttribute("userinfo");
+		String clPriSql = ZKDXUtil.createPriSql(user);
+		PagePublicData pagePublicData = new PagePublicData();
+		StringBuffer sql =null;
+		DataType datatype  = new DataType("", "yjcx/queryYjxxList", "预警信息列表", "true");
+		try{
+			String cxlx = yjcxDto.getCxlx();
+			// 给预警信息赋默认值
+			if(cxlx==null||"".equals(cxlx)){
+				cxlx = "0";
+			}
+			//布控类型 0:表示查询全部 1:身份证号布控 2:wifi布控 3:车辆布控  4:人脸布控
+			//对身份证进行了去重(以往是没去重的)
+		    if("0".equals(cxlx)){
+		    	sql = new StringBuffer("select distinct a.zdryxm,a.sfzh,decode(a.ykxxid,'1','上网',2,'旅馆','3','铁路','4','民航订座','5','民航进港','6','长途客车','7','WIFI') yjlx,"
+		    			+ "to_char(to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss')yjsj,a.hdxgxx yjnr,hdfsddxz yjdd, decode(b.rylx,'1','失独','2','支农返乡','3','商品房建筑质量、延期交付问题','4','涉军群体','5','涉企业群体','6','征地、拆迁群体','7','出租车司机群体','8','残疾人群体','9','涉非法集资案集资户','10','涉法涉诉','11','民工讨薪问题','12','缠访闹访','13','涉教','14','民族宗教群体','99','其他') rylx from t_zkgjb a left join t_zk_ryxxb b  on a.sfzh=b.rysfzh where 1=1 "+clPriSql);
+		    }
+		    if("1".equals(cxlx)){
+		    	sql = new StringBuffer("select distinct a.zdryxm,a.sfzh,decode(a.ykxxid,'1','上网',2,'旅馆','3','铁路','4','民航订座','5','民航进港','6','长途客车','7','WIFI') yjlx,"
+		    			+ "to_char(to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss')yjsj,a.hdxgxx yjnr,hdfsddxz yjdd, decode(b.rylx,'1','失独','2','支农返乡','3','商品房建筑质量、延期交付问题','4','涉军群体','5','涉企业群体','6','征地、拆迁群体','7','出租车司机群体','8','残疾人群体','9','涉非法集资案集资户','10','涉法涉诉','11','民工讨薪问题','12','缠访闹访','13','涉教','14','民族宗教群体','99','其他') rylx from t_zkgjb a left join t_zk_ryxxb b  on a.sfzh=b.rysfzh where b.bklx='1' "+clPriSql);
+		    }
+		    if("2".equals(cxlx)){
+		    	sql = new StringBuffer("select distinct a.zdryxm,a.sfzh,decode(a.ykxxid,'1','上网',2,'旅馆','3','铁路','4','民航订座','5','民航进港','6','长途客车','7','WIFI') yjlx,"
+		    			+ "to_char(to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss')yjsj,a.hdxgxx yjnr,hdfsddxz yjdd, decode(b.rylx,'1','失独','2','支农返乡','3','商品房建筑质量、延期交付问题','4','涉军群体','5','涉企业群体','6','征地、拆迁群体','7','出租车司机群体','8','残疾人群体','9','涉非法集资案集资户','10','涉法涉诉','11','民工讨薪问题','12','缠访闹访','13','涉教','14','民族宗教群体','99','其他') rylx from t_zkgjb a left join t_zk_ryxxb b  on a.sfzh=b.rysfzh where b.bklx='2' "+clPriSql);
+		    }
+		    if("3".equals(cxlx)){
+		    	sql = new StringBuffer("select distinct a.zdryxm,a.sfzh,decode(a.ykxxid,'1','上网',2,'旅馆','3','铁路','4','民航订座','5','民航进港','6','长途客车','7','WIFI') yjlx,"
+		    			+ "to_char(to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss')yjsj,a.hdxgxx yjnr,hdfsddxz yjdd, decode(b.rylx,'1','失独','2','支农返乡','3','商品房建筑质量、延期交付问题','4','涉军群体','5','涉企业群体','6','征地、拆迁群体','7','出租车司机群体','8','残疾人群体','9','涉非法集资案集资户','10','涉法涉诉','11','民工讨薪问题','12','缠访闹访','13','涉教','14','民族宗教群体','99','其他') rylx from t_zkgjb a left join t_zk_ryxxb b  on a.sfzh=b.rysfzh where b.bklx='3' "+clPriSql);
+		    }
+		    if("4".equals(cxlx)){
+		    	sql = new StringBuffer("select personname||'身份证号为'||personidcard||'于'||timestamp_begin||'在'||camera_name||'被拍到了' yjnr ,personname xm,timestamp_begin yjsj,personidcard sfzh,similarity xsd,picture_url,decode(c.rylx,'1','失独','2','支农返乡','3','商品房建筑质量、延期交付问题','4','涉军群体','5','涉企业群体','6','征地、拆迁群体','7','出租车司机群体','8','残疾人群体','9','涉非法集资案集资户','10','涉法涉诉','11','民工讨薪问题','12','缠访闹访','13','涉教','14','民族宗教群体','99','其他') rylx,a.camera_name yjdd  from t_rlsb a,t_zkno_pictureid b,t_zk_ryxxb c where a.face_image_id=b.face_image_id and b.zkno=c.zkno"+clPriSql);
+		    }
+			String xm = yjcxDto.getXm();
+			String sfzh = yjcxDto.getSfzh();
+			String yjlx = yjcxDto.getYjlx();
+			String rylx = yjcxDto.getRylx();
+			String startTime = yjcxDto.getStartTime();
+			String endTime = yjcxDto.getEndTime();
+			if(yjlx!=null&&!"".equals(yjlx)){
+				sql.append(" and a.ykxxid = '"+yjlx+"'");
+			}
+			if(rylx!=null&&!"".equals(rylx)){
+				sql.append(" and b.rylx = '"+rylx+"'");
+			}
+			if(xm!=null&&!"".equals(xm)){
+				sql.append(" and a.zdryxm like '%"+xm+"%'");
+			}
+			if(sfzh!=null&&!"".equals(sfzh)){
+				sql.append(" and a.sfzh like '%"+sfzh+"%'");
+			}
+			if(startTime!=null&&!"".equals(startTime)){
+				sql.append(" and to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss') >=to_date('"+startTime+"','yyyy-mm-dd hh24:mi:ss') ");
+			}
+			if(endTime!=null&&!"".equals(endTime)){
+				sql.append(" and to_date(a.hdfssj,'yyyy-mm-dd hh24:mi:ss') <=to_date('"+endTime+" 23:59:59','yyyy-mm-dd hh24:mi:ss') ");
+			}
+			sql.append(" order by yjsj desc");
+			UserCenterPage controlYjxxList = controlYjxxList(Integer.parseInt(yjcxDto.getPageNum()==null?"1":yjcxDto.getPageNum()), Integer.parseInt(yjcxDto.getPageSize()==null?"10":yjcxDto.getPageSize()), sql.toString());
+			Integer allRecordNO = controlYjxxList.getAllRecordNO();
+			pagePublicData.setPageTotal(allRecordNO);
+			pagePublicData.setPageNum(Integer.parseInt(yjcxDto.getPageNum()==null?"1":yjcxDto.getPageNum()));
+			pagePublicData.setData(controlYjxxList.getMapList());
+			pagePublicData.setType(datatype);
+			
+		}catch (Exception e) {
+			datatype =  new DataType("服务器故障!", "yjcx/queryYjxxList", "预警信息列表", "false");
+			e.printStackTrace();
+		}
+		return pagePublicData;
+	}
+
+}

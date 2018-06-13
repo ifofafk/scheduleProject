@@ -1,0 +1,173 @@
+package com.zngk.service.impl;
+
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dao.PersonAdDao;
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.dto.PersonDto;
+import com.zngk.dto.PersonInfodto;
+import com.zngk.dto.RyglDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.PersonAdService;
+import com.zngk.util.DataModel;
+import com.zngk.util.DesCryptUtil;
+@Service
+@Transactional
+public class PersonAdServiceImpl implements PersonAdService{
+	@Autowired
+	private PersonAdDao personAdDao;
+	
+    @Value("${encryptionKey}")
+    private String encryptionKey; //密钥
+	
+	// 智控权限列表
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Override
+	public ResultGson powerList(HttpSession httpSession,InputPageDataDTO<RyglDTO> data) {
+		ResultGson resultGson = null;
+		try{
+			
+			String sql_temp = " select distinct xx.yhm,xx.yhxm,xx.jgdm,xx.sfzh,xx.yhlx,trim(xx.gly) gly,decode(ny.jsdm,'PTYH','普通用户','PCSGLY','派出所管理员','FJGLY','分局管理员','SJGLY','市局管理员','SYSTEM','系统管理员','ADMIN','管理员') yhsfStr,ny.jsdm yhsf,zz.yhm jgmc,zz.yhsjdwdm,zz.yhsjdw,zz.yhjb from new_yhxxb xx "
+					+ " inner join USER_YHZZGLB_GLB zz on xx.jgdm=zz.yhjgdm "
+					+ " inner join new_yhjsb ny on xx.yhm=ny.yhm "
+					+ " where exists (select 1 from new_yhxxb where yhm=xx.yhm and regexp_like(yhm,'^[0-9_]+$')) ";//将非数字和下划线的警号过滤掉
+			
+			// 查看登录人的信息
+			DataModel dataModel = (DataModel) httpSession.getAttribute("modelData");
+			if(dataModel == null) {
+				throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+			}
+			User user = dataModel.getUser();
+			String departmentCode = user.getDepartmentCode();
+			
+			///////////////
+			// 系统管理员system，admin和市局管理员sjgly 角色可以看到所有接警信息
+			List list = user.getRoleList();
+			if(list.contains("ADMIN") || list.contains("SYSTEM") || list.contains("SJGLY")){
+				
+			//分局和派出所及以下	
+			} else {
+				if(list.contains("FJGLY")){
+					sql_temp = sql_temp + " and substr(yhjgdm, 0, 6) = '" + departmentCode.substring(0, 6) + "' ";
+				} else if (list.contains("PCSGLY")) {
+					sql_temp = sql_temp + " and substr(yhjgdm, 0, 8) = '" + departmentCode.substring(0, 8) + "' ";
+				} else {
+					sql_temp = sql_temp + " and yhjgdm = '" + departmentCode + "' ";
+				}
+			}
+			///////////////
+			
+//			//如果是sjgly system admin角色,可以看所有人
+//			if(list != null && !list.isEmpty()) {
+//				if(!list.contains("SJGLY") && !list.contains("SYSTEM") && !list.contains("ADMIN")){
+//					sql_temp = sql_temp + " and zz.yhjgdm='" +departmentCode+ "') ";//如果有角色但不是sjgly,看他和他辖内
+//				}
+//			//无角色权限列表的人看他辖内所有	
+//			} else {
+//				sql_temp = sql_temp + " and (zz.yhsjdwdm='" + departmentCode + "' or zz.yhjgdm='" +departmentCode+ "') ";//如果该用户没有赋予角色
+//			}
+			
+			
+			// 获取到参数传递给方法中去
+			Object[] args = null;
+			int[] argTypes = null;
+
+			List<Object> argList = new ArrayList<Object>();
+			RyglDTO ryglDTO = data.getData();
+			if (StringUtils.isNotBlank(ryglDTO.getJh())) {
+				sql_temp = sql_temp + " and xx.yhm like '%'||?||'%' ";
+				argList.add(ryglDTO.getJh());
+			}
+			if (StringUtils.isNotBlank(ryglDTO.getJgdm())) {
+				sql_temp = sql_temp + " and zz.yhsjdwdm like '%'||?||'%' ";
+				argList.add(ryglDTO.getJgdm());
+			}
+			if (StringUtils.isNotBlank(ryglDTO.getSfzh())) {
+				sql_temp = sql_temp + " and xx.sfzh like '%'||?||'%' ";
+				argList.add(ryglDTO.getSfzh());
+			}
+			if (StringUtils.isNotBlank(ryglDTO.getJsdm())) {
+				sql_temp = sql_temp + " and ny.jsdm like '%'||?||'%' ";
+				argList.add(ryglDTO.getJsdm());
+			}
+			
+			
+			if (!argList.isEmpty()) {
+				args = argList.toArray();
+				switch (argList.size()) {
+					case 1:
+						argTypes = new int[] { Types.VARCHAR };
+						break;
+					case 2:
+						argTypes = new int[] { Types.VARCHAR, Types.VARCHAR };
+						break;
+					case 3:
+						argTypes = new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR };
+						break;
+					case 4:
+						argTypes = new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR };
+						break;	
+				}
+			}
+			// 所有的数据存放到分页中
+			UserCenterPage userCenterPage = personAdDao.controlList(httpSession, data.getPageNum(),data.getPageSize() , sql_temp, args, argTypes);
+			Map map = new HashMap();
+			map.put("pageNum", data.getPageNum());
+			map.put("pageTotal", userCenterPage.getAllRecordNO());
+			map.put("list", userCenterPage.getMapList());
+			resultGson = ResultGson.ok(map);
+		}catch (Exception e) {
+			resultGson = ResultGson.error(e.getMessage());
+		}
+		
+	return resultGson;
+	}
+	
+	// 用户更新的操作
+		@Override
+		public int personUpdate(PersonDto personDto, HttpSession httpSession) {
+			return personAdDao.personUpdate(httpSession, personDto);
+		}
+		
+		// 修改密码
+		@Override
+		public int changeKl(String yhm, String kl, String type,HttpSession httpSession) {
+			//初始化密码
+			try {
+				DesCryptUtil des = new DesCryptUtil(encryptionKey);
+				if("0".equals(type)) {
+					kl = des.encrypt("11");
+				}else{
+					kl = des.encrypt(kl);
+				}
+			} catch (Exception e) {
+				throw new ServiceException("false","系统执行错误");
+			}
+			return personAdDao.updateByJhkl(yhm, kl,httpSession);
+		}
+
+		@Override
+		public int personSave(PersonInfodto personInfodto, HttpSession httpSession) {
+			
+			return personAdDao.personSave(personInfodto, httpSession);
+		}
+		
+
+
+}

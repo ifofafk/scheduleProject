@@ -1,0 +1,85 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+public class YjcxDto implements Serializable{
+	/**
+	 * 预警信息条件dto
+	 */
+	private static final long serialVersionUID = 1L;
+	private String cxlx;
+	private String xm;
+	private String sfzh;
+	//private String bklx;
+	private String startTime;
+	private String endTime;
+	private String yjlx;
+	private String rylx;
+	private String pageSize;
+	private String pageNum;
+	//是否外部调用 0本系统   1外部调用
+	private Integer jkFlag;
+
+	public String getRylx() {
+		return rylx;
+	}
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+	public String getCxlx() {
+		return cxlx;
+	}
+	public void setCxlx(String cxlx) {
+		this.cxlx = cxlx;
+	}
+	public String getXm() {
+		return xm;
+	}
+	public void setXm(String xm) {
+		this.xm = xm;
+	}
+	public String getSfzh() {
+		return sfzh;
+	}
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+	public String getStartTime() {
+		return startTime;
+	}
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+	public String getEndTime() {
+		return endTime;
+	}
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+	public String getYjlx() {
+		return yjlx;
+	}
+	public void setYjlx(String yjlx) {
+		this.yjlx = yjlx;
+	}
+	public String getPageSize() {
+		return pageSize;
+	}
+	public void setPageSize(String pageSize) {
+		this.pageSize = pageSize;
+	}
+	public String getPageNum() {
+		return pageNum;
+	}
+	public void setPageNum(String pageNum) {
+		this.pageNum = pageNum;
+	}
+	public Integer getJkFlag() {
+		return jkFlag;
+	}
+	public void setJkFlag(Integer jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+	
+
+}

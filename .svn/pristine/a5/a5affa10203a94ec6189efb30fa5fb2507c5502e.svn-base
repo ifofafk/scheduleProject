@@ -1,0 +1,312 @@
+package com.zngk.dao.imp;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.Singleton;
+import com.zngk.dao.BkspDao;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.util.PageSqlUtils;
+import com.zngk.util.ZKDXUtil;
+
+@Repository
+@SuppressWarnings("all")
+public class BkspDaoImpl extends AbstractDao implements BkspDao {
+	private final Logger logger = Logger.getLogger(getClass());
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	/**
+	 * 查询自已待审批智控名单
+	 * 
+	 * @param dataModel
+	 * @param page
+	 * @param pageSize
+	 * @author XiongZhu
+	 * @return
+	 */
+	@Override
+	public UserCenterPage getMeRequestZkData(BkListQueryDTO data, User user, Integer page, Integer pageSize) {
+		UserCenterPage userCenterPage = UserCenterPage.getInstance(page, pageSize);
+		String sql = getMeRequestZkDataSql(data, user);
+		String totalSQL = "select count(0) from (" + sql + ")";
+		Integer getmeryzksjListTotal = jdbcTemplate.queryForObject(totalSQL, Integer.class);
+		userCenterPage.setAllRecordNO(getmeryzksjListTotal);
+		// 封装总页数
+		Integer ryzksjListallPageNumber = getmeryzksjListTotal / pageSize
+				+ (getmeryzksjListTotal % pageSize == 0 ? 0 : 1);
+		userCenterPage.setAllPageNO(ryzksjListallPageNumber);
+		String sqlString = PageSqlUtils.createPageSql(sql, page, pageSize);
+		logger.info("查询自已待审批智控名单SQL ：" + sqlString);
+		List<Map<String, Object>> getmeryzksjList = jdbcTemplate.queryForList(sqlString);
+		userCenterPage.setMapList(getmeryzksjList);
+		return userCenterPage;
+	}
+
+	/***
+	 * 5查询自已待审批智控名单的sql
+	 */
+	public String getMeRequestZkDataSql(BkListQueryDTO data, User user) {
+
+//		// 审批状态
+//		Integer state = data.getState();
+//		if (null == state) {
+//			state = 0;
+//		}
+//		// 获取审批级别
+//		Integer spjb = ZKDXUtil.getSPjb(user);
+//
+//		StringBuffer sb = new StringBuffer();
+//		if (state == 4) {
+//			// 当查询的是审批不通过时显示 审批意见
+//			sb.append(
+//					"select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,t.sqrdwdm,t.sqrdwmc,t.sqrjh,t.RYZKKSSJ,t.RYZKJSSJ,decode(t.state,'0','未审批','1','已审批','2','续控','3','撤控','4','审批不通过') state,t1.spzt,t1.sqsm,t1.pcsspr,t1.pcsspyj bkyy,t2.yhsjdw,t2.yhsjdwdm,t2.yhm from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO  left join USER_YHZZGLB_GLB t2  on  t.sqrdwdm =  t2.yhjgdm  where 1=1 ");
+//		} else {
+//
+//			sb.append(
+//					"select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,t.sqrdwdm,t.sqrdwmc,t.sqrjh,t.RYZKKSSJ,t.RYZKJSSJ,decode(t.state,'0','未审批','1','已审批','2','续控','3','撤控','4','审批不通过') state,t.bkyy,t1.spzt,t1.sqsm,t1.pcsspr,t1.pcsspyj,t2.yhsjdw,t2.yhsjdwdm,t2.yhm from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO  left join USER_YHZZGLB_GLB t2  on  t.sqrdwdm =  t2.yhjgdm  where 1=1 ");
+//		}
+//		sb.append(ZKDXUtil.createPriSql(user));
+//		sb.append(getQuerySql(data));
+//		sb.append(" and t.state='" + state + "'");
+//		sb.append(" order by t.czsj desc,t.zkno desc ");// 根据1个主键再排序，不然会分页浮动
+//		String sql = sb.toString();
+//		return sql;
+		
+		
+		
+		// 审批状态
+		Integer state = data.getState();
+		if (null == state) {
+			state = 0;
+		}
+		// 获取审批级别
+		Integer spjb = user.getSpjb();
+
+		StringBuffer sb = new StringBuffer();
+		String queryState = "";
+		
+		//个人用户看总的审批状态
+		if(user.getRoleList() != null && user.getRoleList().contains("PTYH")){
+			sb.append(" select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,t.sqrdwdm,t.sqrdwmc,t.sqrjh,t.RYZKKSSJ,t.RYZKJSSJ, decode(t.state,'0','待审批','1','已审批','2','续控','3','撤控','4','审批不通过','5','一审待审批','6','一审不通过') state "
+						+ " from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO where 1=1 ");
+			if(state == 0){
+				queryState = " and t1.spzt=1";//待审批
+			}else if(state == 1){
+				queryState = " and t1.spzt=0";//通过
+			}else if(state == 4){
+				queryState = " and t1.spzt=2";//驳回
+			}
+			
+		// 管理员看流转到他的
+		}else{ 
+//			,decode(t.state,'0','待审批','1','已审批','2','续控','3','撤控','4','审批不通过','5','一审待审批','6','一审不通过') state
+			sb.append(" select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,t.sqrdwdm,t.sqrdwmc,t.sqrjh,t.RYZKKSSJ,t.RYZKJSSJ, decode(fl.flow_result,0,'待审批',1,'已审批',2,'不通过') state "
+						+ " from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO left join t_zk_flow_info fl on t.zkno=fl.object_id where fl.curr_level="+spjb+" and fl.curr_node='" +user.getDepartmentCode()+ "'");
+//			if(spjb == 2){//一审
+				if(state == 0){
+					queryState = " and fl.flow_result=0";//未处理
+				}else if(state == 1){
+					queryState = " and fl.flow_result=1";//通过
+				}else if(state == 4){
+					queryState = " and fl.flow_result=2";//不通过
+				}
+//			}
+			
+		}
+		
+		sb.append(ZKDXUtil.createPriSql(user));
+		sb.append(getQuerySql(data));
+		sb.append(queryState);
+		sb.append(" order by t.czsj desc,t.zkno desc ");// 根据1个主键再排序，不然会分页浮动
+		String sql = sb.toString();
+		return sql;
+		
+		
+	}
+
+	/**
+	 * 返回查询条件 让前端区回显查询条件
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public String getQuerySql(BkListQueryDTO data) {
+		
+		//当前用户查询的状态(他流转级别的状态)
+		Integer state = data.getState();
+		// 被控人姓名
+		String bkrxm = data.getBkrxm();
+		// 身份证号
+		String sfzh = data.getSfzh();
+		// 申请人
+		String sqr = data.getSqr();
+		// 申请单位
+		String sqdw = data.getSqdw();
+		// 申请原因
+		String sqyy = data.getSqyy();
+		
+		StringBuffer queryStr = new StringBuffer();
+		if (null != bkrxm && !("").equals(bkrxm)) {
+			queryStr.append(" and t.RYXM like '%" + bkrxm.trim() + "%'");
+		}
+		if (null != sfzh && !("").equals(sfzh)) {
+			queryStr.append(" and t.RYSFZH like '%" + sfzh.trim() + "%'");
+		}
+		if (null != sqr && !("").equals(sqr)) {
+			queryStr.append(" and t.SQRXM like '%" + sqr.trim() + "%'");
+		}
+		if (null != sqdw && !("").equals(sqdw)) {
+			queryStr.append(" and t.SQRDWMC like '%" + sqdw.trim() + "%'");
+		}
+		if (null != sqyy && !("").equals(sqyy)) {
+			queryStr.append(" and t.BKYY like '%" + sqyy.trim() + "%'");
+		}
+		
+		return queryStr.toString();
+	}
+
+	@Override
+	public void insertSPBLog(String spdSql) {
+		jdbcTemplate.execute(spdSql);
+	}
+
+	@Override
+	public void saveWifi(String zkno) {
+		String sql = "insert into ZK_WIFI_BK@Abpt  select t.zkno,t.ryxm,t.rysfzh,t.rysjh,t.mac,t.bkyy,to_date(t.ryzkkssj,'yyyy-mm-dd'),to_date(t.ryzkjssj,'yyyy-mm-dd'),sysdate,'0' from T_ZK_RYXXB t  where ZKNO = '"
+				+ zkno + "'";
+		jdbcTemplate.update(sql);
+	}
+
+	// 单个布控的审批
+	@Override
+	public int singleShenPi(HttpSession httpSession, String zkno, String state, Integer spjb) {
+		
+		if(spjb == 2){
+			if("1".equals(state)){
+				state = "0";
+			}else if("4".equals(state)){
+				state = "6";
+			}
+		}
+//		else if(spjb == 3) {
+//			if("1".equals(state)){
+//				state = "1";
+//			}else if("4".equals(state)){
+//				state = "4";
+//			}
+//		}
+		String sql = " update T_ZK_RYXXB set STATE ='" + state + "' where zkno ='" + zkno + "'";
+		String ryxm = "";
+		try {
+			ryxm = searchRyxm(zkno);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		String remark = "进行了一审操作,被审批人 :";
+		if(spjb == 3){
+			remark = "进行了二审操作,被审批人 :";
+		}
+		operationLogUtil.recordLog(httpSession, "3", "审批", zkno, remark + ryxm);
+		return jdbcTemplate.update(sql);
+	}
+
+	@Override
+	public Map<String, Object> queryByZkno(String zkno) {
+		String sql = " select ry.ryxm,ry.rysfzh,ry.zyfw,ry.bkyy,ry.ryzkkssj,ry.ryzkjssj,ry.sqrxm,ry.sqrjh,ry.sqrdwdm,ry.sqrdwmc,ry.rylx,ry.bklx,ry.mac,ry.rysjh,ry.cph,xx.jsrxm,xx.jsrsj,xx.jsrjh from T_ZK_RYXXB ry left join T_ZK_XXJSR xx on ry.zkno=xx.zkno where ry.zkno='"
+				+ zkno + "'";
+		return jdbcTemplate.queryForMap(sql);
+	}
+
+	// 布控中的续控操作
+	@Override
+	public ResultGson upControl(HttpSession httpSession, String zkno, String xkyy, String xksj) {
+		ResultGson resultGson = null;
+		try {
+			// 布控续控的sql
+			String[] split = zkno.split("-");
+			User user = (User) httpSession.getAttribute("userinfo");
+			String name = user.getName();
+			String departmentName = user.getDepartmentName();
+			Long id = null;
+			String ryxm = "";
+			for (String string : split) {
+				id = this.getPrimaryID();
+				String sql = " update T_ZK_RYXXB set ryzkjssj = '" + xksj + "' where zkno ='" + string + "'";
+				jdbcTemplate.update(sql);
+				try {
+					ryxm = searchRyxm(zkno);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+				operationLogUtil.recordLog(httpSession, "3", "续控", string, "进行了续控操作,被续控人 : " + ryxm);
+				resultGson = ResultGson.ok();
+
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			resultGson = ResultGson.error("服务器异常!");
+			e.printStackTrace();
+
+		}
+
+		return resultGson;
+	}
+
+	// 撤控的操作
+	@Override
+	public ResultGson downControl(HttpSession httpSession, String zkno, String ckyy, String cksj) {
+		ResultGson resultGson = null;
+		try {
+			String[] split = zkno.split("-");
+			User user = (User) httpSession.getAttribute("userinfo");
+			String name = user.getName();
+			String departmentName = user.getDepartmentName();
+			Long id = null;
+			String ryxm = "";
+			id = this.getPrimaryID();
+			for (String string : split) {
+				String sql = " update T_ZK_RYXXB set STATE = '3' ,ryzkkssj = '" + cksj + "' where zkno='" + string
+						+ "'";
+				jdbcTemplate.update(sql);
+				System.out.println("撤控的sql" + sql);
+				try {
+					ryxm = searchRyxm(zkno);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+				operationLogUtil.recordLog(httpSession, "3", "撤控", string, "进行了撤控操作,被撤控人 : " + ryxm);
+				resultGson = ResultGson.ok();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			resultGson = ResultGson.error("服务器异常!");
+		}
+
+		return resultGson;
+	}
+
+	@Override
+	public Map queryPictureInfo(String zkno) {
+		String pictureInfoSql ="select xm,sfzh,gender,url from zk_rlsb_picturefile where zkno='"+zkno+"'";
+		List<Map<String,Object>> queryForList = jdbcTemplate.queryForList(pictureInfoSql);
+		Map<String, Object> map = queryForList.get(0);
+		//更改推送状态
+		String updateState = "update zk_rlsb_picturefile set state='1' where zkno='"+zkno+"'";
+		jdbcTemplate.update(updateState);
+		return map;
+	}
+
+}

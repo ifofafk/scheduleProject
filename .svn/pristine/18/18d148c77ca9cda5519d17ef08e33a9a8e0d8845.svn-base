@@ -1,0 +1,75 @@
+package com.zngk.service;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import com.zngk.dto.BatchEntityDTO;
+import com.zngk.dto.BkBatchSaveDTO;
+import com.zngk.dto.BkDTO;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface RybkService {
+
+	public void save(String sfzh, String userName, String jySfzh, String jh);
+
+	public Map<String,Object> selectPerson(String sfzh);
+	
+	/**
+	 * 地图圈点布控
+	 * @param request  表单所有参数
+	 * @param httpSession
+	 * @author WangChen
+	 * @throws Exception
+	 */
+	public void RequestMap(User userinfo, BkDTO data) throws Exception;
+	
+	
+	/**
+	 * 布控结果的列表查询,核对布控情况 --王晨
+	 * @param drczno
+	 * @param pageNum
+	 * @param pageSize
+	 * @return
+	 */
+    public UserCenterPage queryListZkryxx(String drczno, Integer pageNum, Integer pageSize);
+    
+//    /**
+//	 * 批量更新人员智控信息表
+//	 * @param request
+//	 * @return
+//	 */
+//	public int updateAndSaveBatchRybk(BkDTO bkDTO, User userinfo) throws Exception;
+	
+	
+	/**
+	 * 解析excel
+	 * @param is 输入流
+	 * @param type 批量:人员布控  wifi布控  车辆布控  人脸布控
+	 * @return 解析出来的数据
+	 */
+	List<Map<String,String>> parseExcel(InputStream is, String fileName, int type) throws Exception;
+	
+	/**
+	 * 清洗数据，划分正常和错误的 
+	 * @param list
+	 * @param type
+	 * @return
+	 */
+	BatchEntityDTO washExcelData(List<Map<String, String>> list, String drczno, int type); 
+	
+	/**
+	 * 插入数据并返回drczno
+	 * @param userinfo  用户信息
+	 * @param ip  IP地址
+	 * @param list  数据
+	 * @param type  业务类别
+	 */
+	String saveBatchData(User userinfo, String ip, BkBatchSaveDTO bkBatchSaveDTO);
+	
+
+	
+	
+	
+}

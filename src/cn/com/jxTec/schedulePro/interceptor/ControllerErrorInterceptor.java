@@ -1,0 +1,90 @@
+/**
+ * 
+ */
+package cn.com.jxTec.schedulePro.interceptor;
+
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
+
+import cn.com.jxTec.schedulePro.common.constant.UserEmun;
+
+/**
+ * 增加ActionError拦截器：在action方法执行过程中抛出异常后自动增加ActionError
+ * 
+ * @author Sky
+ * 
+ */
+public class ControllerErrorInterceptor implements HandlerExceptionResolver {
+	protected Log logger = LogFactory.getLog(this.getClass());
+
+	public static final String EXCEPTION_CLASS = "ControllerErrorInterceptor";
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	// private static final long serialVersionUID = -7067045516670066374L;
+
+	/**
+	 * 是否SQL异常
+	 * 
+	 * @param e
+	 * @return
+	 */
+	@Override
+	public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
+			Exception ex) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Map<String, Object> model = new HashMap<String, Object>();
+		String msg = ex.getMessage();
+		System.out.println(msg);
+		if ("null".equals(msg)) {
+			msg = ex.toString();
+		}
+		if ("登录超时".equals(msg)) {
+			model.put("time", sdf.format(new Date()));
+			model.put("exception", UserEmun.SESSION_EXPIRES.getDesc());
+			model.put("success", false);
+			model.put("status", Integer.parseInt(UserEmun.SESSION_EXPIRES.getCode()));
+			model.put("data", null);
+		}
+		if ("no face detected!".equals(msg)) {
+			model.put("time", sdf.format(new Date()));
+			model.put("msg", UserEmun.NO_FACE_DELETE.getDesc());
+			model.put("success", false);
+			model.put("status", Integer.parseInt(UserEmun.NO_FACE_DELETE.getCode()));
+			model.put("data", null);
+		} else {
+			model.put("time", sdf.format(new Date()));
+			model.put("exception", "接口服务异常");
+			model.put("msg", msg);
+
+		}
+
+		String host = request.getRemoteHost();
+		StringBuffer buffer = request.getRequestURL();
+		String url = buffer.toString();
+		String id = UUID.randomUUID().toString().replaceAll("-", "");
+
+		String sql = "insert into system_error_log(sel_id,happen_time,referer_url,error_type,remark,client_ip) values(?,sysdate,?,?,?,?)";
+		Object[] args = { id, url, msg, msg, host };
+		int[] argTypes = { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR };
+		// 添加错误日志
+		jdbcTemplate.update(sql, args, argTypes);
+		return new ModelAndView(new MappingJackson2JsonView(), model);
+	}
+
+}

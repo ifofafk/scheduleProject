@@ -1,0 +1,213 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 人脸布控表单
+ */
+public class FaceBkDTO implements Serializable {
+
+	private static final long serialVersionUID = -8133698915700248301L;
+
+	// 导入操作编号
+	private String drczno;
+	
+	// 人员类型
+	private String rylx;
+	
+	// 布控原因
+	private String bkyy;
+	
+	// 布控开始时间
+	private String startTime;
+	
+	// 布控开始时间
+	private String endTime;
+
+	// 接收人警号
+	private String jsrjh;
+	
+	// 接收人姓名
+	private String jsrxm;
+
+	// 接收人手机
+	private String jsrsjh;
+	
+	// 是否外部接口调用   1是  0否
+	private int jkFlag;
+	
+	////人脸接口库字段
+	// 用户姓名
+	private String name;
+	
+	// 性别
+	private String gender;
+	
+	// 出生日期  YYYY-mm-dd
+	private String birthday;
+	
+	// 民族
+	private String nation;
+	
+	// 身份证号
+	private String persionId;
+	
+	// 人脸库id
+	private String repositoryId;
+	
+	// 接口说明字段image_upload
+	private String action;
+	
+	// 图片base64流
+	private String pictureBase64;
+
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getBirthday() {
+		return birthday;
+	}
+
+	public void setBirthday(String birthday) {
+		this.birthday = birthday;
+	}
+
+	public String getNation() {
+		return nation;
+	}
+
+	public void setNation(String nation) {
+		this.nation = nation;
+	}
+
+	public String getPersionId() {
+		return persionId;
+	}
+
+	public void setPersion_id(String persionId) {
+		this.persionId = persionId;
+	}
+
+	public String getRepositoryId() {
+		return repositoryId;
+	}
+
+	public void setRepositoryId(String repositoryId) {
+		this.repositoryId = repositoryId;
+	}
+
+	public String getAction() {
+		return action;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
+	}
+
+	public String getPictureBase64() {
+		return pictureBase64;
+	}
+
+	public void setPictureBase64(String pictureBase64) {
+		this.pictureBase64 = pictureBase64;
+	}
+
+	public String getRylx() {
+		return rylx;
+	}
+
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+
+	public String getBkyy() {
+		return bkyy;
+	}
+
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getJsrjh() {
+		return jsrjh;
+	}
+
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+
+	public String getJsrxm() {
+		return jsrxm;
+	}
+
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+
+	public String getJsrsjh() {
+		return jsrsjh;
+	}
+
+	public void setJsrsjh(String jsrsjh) {
+		this.jsrsjh = jsrsjh;
+	}
+
+	public int getJkFlag() {
+		return jkFlag;
+	}
+
+	public void setJkFlag(int jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+
+	@Override
+	public String toString() {
+		return "FaceBkDTO [drczno=" + drczno + ", name=" + name + ", gender=" + gender + ", birthday=" + birthday
+				+ ", nation=" + nation + ", persionId=" + persionId + ", repositoryId=" + repositoryId + ", action="
+				+ action + ", pictureBase64=" + pictureBase64 + ", rylx=" + rylx + ", bkyy=" + bkyy + ", startTime="
+				+ startTime + ", endTime=" + endTime + ", jsrjh=" + jsrjh + ", jsrxm=" + jsrxm + ", jsrsjh=" + jsrsjh
+				+ ", jkFlag=" + jkFlag + "]";
+	}
+
+	
+	
+}

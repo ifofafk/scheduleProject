@@ -1,0 +1,128 @@
+package com.zngk.entity;
+
+import java.io.Serializable;
+
+public class RedListPerson implements Serializable {
+
+	private static final long serialVersionUID = 7841714881199411002L;
+	
+	//人员编号
+	private String rlno;
+	
+	//姓名
+	private String name;
+	
+	//身份证号
+	private String idCard;
+	
+	//手机号
+	private String phone;
+	
+	//是否有效  1是   0否
+	private Integer required;
+	
+	//创建时间
+	private String createTime;
+	
+	//创建人
+	private String creator;
+	
+	//更新时间
+	private String updateTime;
+	
+	//创建人
+	private String updatetor;
+		
+	//备注
+	private String remark;
+
+	public String getRlno() {
+		return rlno;
+	}
+
+	public void setRlno(String rlno) {
+		this.rlno = rlno;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getIdCard() {
+		return idCard;
+	}
+
+	public void setIdCard(String idCard) {
+		this.idCard = idCard;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public Integer getRequired() {
+		return required;
+	}
+
+	public void setRequired(Integer required) {
+		this.required = required;
+	}
+
+	public String getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(String createTime) {
+		this.createTime = createTime;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public String getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(String updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public String getUpdatetor() {
+		return updatetor;
+	}
+
+	public void setUpdatetor(String updatetor) {
+		this.updatetor = updatetor;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	@Override
+	public String toString() {
+		return "RedListPerson [rlno=" + rlno + ", name=" + name + ", idCard=" + idCard + ", phone=" + phone
+				+ ", required=" + required + ", createTime=" + createTime + ", creator=" + creator + ", updateTime="
+				+ updateTime + ", updatetor=" + updatetor + ", remark=" + remark + "]";
+	}
+
+	
+	
+}

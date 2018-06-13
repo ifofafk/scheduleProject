@@ -1,0 +1,101 @@
+package com.zngk.dao.imp;
+
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.RedListDao;
+import com.zngk.entity.RedListPerson;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.util.PageSqlUtils;
+import com.zngk.util.PubMethod;
+
+@Repository("redListDao")
+public class RedListDaoImp extends AbstractDao implements RedListDao {
+
+	@Autowired
+    private JdbcTemplate jdbcTemplate;
+
+	@Override
+	public UserCenterPage queryBySfzh(String sfzh, Integer pageNum, Integer pageSize) {
+
+		UserCenterPage userCenterPage = UserCenterPage.getInstance(pageNum, pageSize);
+		String sql = " select rlno,name,idCard,phone,remark from T_ZK_RedList where required=1 ";
+		if(StringUtils.isNotBlank(sfzh)){
+			sql = sql + " and idCard='" + sfzh + "'";
+		}
+		
+        String totalSQL = "select count(0) from (" + sql + ")";
+        Integer getmeryzksjListTotal = jdbcTemplate.queryForObject(totalSQL, Integer.class);
+        userCenterPage.setAllRecordNO(getmeryzksjListTotal);
+        //封装总页数
+        Integer ryzksjListallPageNumber = getmeryzksjListTotal / pageSize + (getmeryzksjListTotal % pageSize == 0 ? 0 : 1);
+        userCenterPage.setAllPageNO(ryzksjListallPageNumber);
+        String sqlString = PageSqlUtils.createPageSql(sql, pageNum, pageSize);
+      
+        List<Map<String, Object>> getmeryzksjList = jdbcTemplate.queryForList(sqlString);
+        userCenterPage.setMapList(getmeryzksjList);
+        return userCenterPage;
+	}
+	
+	@Override
+	public boolean queryInRedListBySfzh(String sfzh){
+		boolean flag = false;
+		String sql = "select count(1) from T_ZK_RedList where required=1 and idCard='" + sfzh +"'";
+		Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+		if(count > 0){
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public void addRedList(RedListPerson redListPerson) {
+		String rlno = PubMethod.getUUID("rlno_");
+		String sqlStr =  "insert into T_ZK_RedList values (?,?,?,?,1,sysdate,?,sysdate,?,?)";
+		String[] args = new String[]{rlno,redListPerson.getName(),redListPerson.getIdCard(),redListPerson.getPhone(),redListPerson.getCreator(),redListPerson.getUpdatetor(),redListPerson.getRemark()}; 
+		int[] argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR}; 
+		jdbcTemplate.update(sqlStr, args, argTypes);
+		HttpSession session = PubMethod.getSession();
+		operationLogUtil.recordLog(session, "1", "新增红名单人员", rlno, "新增红名单人员,新增人员姓名 : " +redListPerson.getName()+" 身份证号 : "+redListPerson.getIdCard());
+	}
+
+	@Override
+	public void deleteRedList(String rlno) {
+		String sql = "delete from T_ZK_RedList where rlno=?";
+		String[] args = new String[]{rlno}; 
+		int[] argTypes = new int[]{Types.VARCHAR};
+		String ryxm ="";
+		try {
+			ryxm = searchRedRyxm(rlno);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		jdbcTemplate.update(sql, args, argTypes);
+		
+		HttpSession session = PubMethod.getSession();
+		operationLogUtil.recordLog(session, "2", "删除红名单人员", rlno, "删除红名单人员,删除人员姓名 : " +ryxm);
+	}
+
+	@Override
+	public void updateRedList(RedListPerson redListPerson) {
+		String sqlStr = " update T_ZK_RedList set name=?,idCard=?,phone=?,updateTime=sysdate,updatetor=?,remark=? where rlno=?";
+		String[] args = new String[]{redListPerson.getName(),redListPerson.getIdCard(),redListPerson.getPhone(),redListPerson.getUpdatetor(),redListPerson.getRemark(),redListPerson.getRlno()}; 
+		int[] argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR}; 
+		jdbcTemplate.update(sqlStr, args, argTypes);
+		
+		HttpSession session = PubMethod.getSession();
+		operationLogUtil.recordLog(session, "3", "修改红名单人员", redListPerson.getRlno(), "修改红名单人员,被修改人员姓名 : " +redListPerson.getName()+" 身份证号 : "+redListPerson.getIdCard());
+	}
+
+	
+	
+
+}

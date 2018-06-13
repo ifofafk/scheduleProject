@@ -1,0 +1,120 @@
+package com.zngk.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.zngk.entity.PublicData;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface PersonPmDao {
+	
+	 public void save(String sfzh,String userName,String jySfzh,String jh);
+	    //全国人口基本信息的查询
+	    public List selectPersons(String sfzh);
+	    //验证身份证号是否存在
+	    public String sfzh(String sfzh,String userName,String jySfzh,String jh);
+	    //添加的方法
+	    public void addObject();
+	    //用户信息添加的
+	    public int roleSave(HttpServletRequest request,HttpSession httpSession);
+	    //修改的方法
+	    public void updateObject(String sfzh);
+	    //删除的方法
+	    public void deleteObject(String sfzh);
+	    public void RequestIll(HttpServletRequest request,HttpSession httpSession);
+	    //图片传递到controller
+	    public  String ImagetoController(String imgStr);
+
+	    //单个布控的状态修改
+	    public int updateStateByZknoAndState(String zkno, String state);
+	    
+	    //布控结果查询详细信息
+	    public List selectContent(HttpSession httpSession,HttpServletRequest request);
+	    //条件查询的接口
+	    public UserCenterPage controlList(HttpSession httpSession, HttpServletRequest request,String sql,Object[] args,int[] argTypes) ;
+	    //wifi条件查询
+	    public UserCenterPage controlWifiList(HttpServletRequest request,String sql);
+	    //wifi布控查询
+	    public UserCenterPage controlList(HttpServletRequest request,String sql);
+       //根据名字修改用户信息
+	    public void updateByYhm(HttpSession httpSession,HttpServletRequest request);
+	    //执行修改的操作
+	    public int roleUpdate(HttpSession httpSession,HttpServletRequest request);
+	    //布控续控操作
+	    public PublicData upControl(HttpSession httpSession,String zkno,String xkyy,String xksj);
+	    //布控的撤控操作
+	    public PublicData downControl(HttpSession httpSession,String zkno,String ckyy,String cksj);
+
+//	    //重点人员照片的接口
+//	    public void photoData(String sfzh,String userName,String jySfzh,String jh);
+	    
+	    //0 保存人员信息表 --wangchen 20170830
+	    public void insertRyxxb(Map<String,String> params,User userinfo);
+	    
+	    //1 保存布控人员信息  --wangchen 20170830
+	    public void insertZkry(Map<String,String> params);
+	    
+	    //2 保存人员基本信息  --wangchen 20170830
+	    public void insertRyjbxx(Map<String,String> params);
+	    
+	    //3 保存信息接收人  --wangchen 20170830
+	    public void insertXxjsr(Map<String,String> params);
+	    
+	    
+	    //填写审批日志
+	    public void insertSPBLog(String spbSql);
+	    
+	    //根据zkno查询
+	    public Map<String,Object> queryByZkno(String zkno);
+	     
+	    //====统计墙 start ====
+	    //获取按分局 布控数字结果
+	    public List<Map<String,Object>> getDistrictBkNum();
+	    
+	    //获取按分局 比中数字结果
+	    public List<Map<String,Object>> getDistrictBdNum();
+	    
+	    //资源范围分类统计
+	    //1.上网  2.旅馆  3.铁路  4.民航订座  5.民航进港  6.长途客车
+	    public Map<String,Object> getZyfwBkNum(); 
+	    //1.上网  2.旅馆  3.铁路  4.民航订座  5.民航进港  6.长途客车
+	    public Map<String,Object> getZyfwBdNum(); 
+	    
+	    //人员类型分类
+	    public List<Map<String, Object>> getRylxNum(); 
+
+	    //其他库的数据资源统计汇总 ： 类型 ，数值， 最新时间
+	    //1.上网  2.旅馆  3.铁路  4.民航订座  5.民航进港  6.长途客车
+	    public List<Map<String, Object>> getSjzyNum();
+	    
+	    //24小时的布控人员轨迹
+	    public Map<String, Object> getBkrygj(String startTime, String endTime);
+	    
+	    //布控结果分析
+	    public List<Map<String, Object>> getBkjgfx();
+	    
+	    //最近预警人员取前N个，活动时间倒序
+	    public UserCenterPage getYjry(Integer pageNum, Integer pageSize);
+	    
+	    //====统计墙 end ====
+	    
+	    
+	    
+		public void shenPiWifi(HttpSession httpSession,
+				HttpServletRequest request);
+		public void saveWifi(String zkno);
+		
+		//修改密码
+		public int updateByJhkl(String yhm, String kl);
+		
+		//根据当前用户查询统计他布控的情况
+		public Map<String,Object> getBkTj(String yhm);
+
+		
+		//根据当前用户的权限 查询统计他能管辖的部门布控的情况
+		public Map<String,Object> getDeptBkTj(User user,String dwdm, String role);
+}

@@ -1,0 +1,127 @@
+package com.zngk.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.rybk.RybkEmun;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.CarBkBatchSaveDTO;
+import com.zngk.dto.CarBkDTO;
+import com.zngk.dto.FaceBkDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.CarService;
+import com.zngk.service.FaceService;
+import com.zngk.service.ToLogonService;
+import com.zngk.util.HttpUtil;
+import com.zngk.util.PubMethod;
+
+
+@Controller
+@RequestMapping(value="face")
+public class FaceController {
+	
+	
+	@Autowired
+	private FaceService faceService;
+	
+	@Autowired
+	private ToLogonService tologonservies;
+	
+	/**
+	 * 单个车辆布控的保存
+	 * @author WangChen
+	 * @param carBkDTO
+	 * @return
+	 */
+	@RequestMapping(value="saveCar")
+	@ApiOperation(value="单个人脸布控的保存",httpMethod="PUT",notes="单个车辆布控",response=ResultGson.class) 
+	@ResponseBody
+	public ResultGson saveCar(@RequestBody FaceBkDTO faceBkDTO,@RequestParam(value = "outterJh",required=false)String outterJh){
+		ResultGson result = ResultGson.ok();
+		
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+		
+		
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if(faceBkDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+		User userinfo = (User)httpSession.getAttribute("userinfo");
+		
+		if(userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		
+		faceService.saveFace(faceBkDTO,userinfo);
+		
+		return result;
+	}
+	
+	
+////	@RequestMapping(value="batchUpdateCar")
+////	@ApiOperation(value="批量人脸布控的保存",httpMethod="PUT",notes="批量人脸布控的保存",response=ResultGson.class) 
+////	@ResponseBody
+////	public ResultGson batchUpdateWifi(@RequestBody CarBkBatchSaveDTO carBkBatchSaveDTO) throws Exception{
+////		ResultGson result = ResultGson.ok();
+////		
+////		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+////		HttpSession httpSession = request.getSession();
+////		
+////		if(StringUtils.isBlank(carBkBatchSaveDTO.getDrczno()) || carBkBatchSaveDTO.getJkFlag() == null || !(carBkBatchSaveDTO.getSucessList() != null && !(carBkBatchSaveDTO.getSucessList().isEmpty())) ) {
+////			throw new ServiceException(RybkEmun.PARAM_EMPTY.getCode(), RybkEmun.PARAM_EMPTY.getDesc());
+////		}
+////		
+////		//指定账号登录(外部接口调用)
+////		if(carBkBatchSaveDTO.getJkFlag() == 1) {
+////			tologonservies.jkLogin(request, httpSession, "000000", "81a3237af7189c72");
+////		}
+////						
+////		User userinfo = (User)httpSession.getAttribute("userinfo");
+////		if(userinfo == null) {
+////			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+////		}
+////		
+////		faceService.batchUdpateCar(userinfo,PubMethod.getCallerIpMe(request),carBkBatchSaveDTO);
+////		
+////		return result;
+////	}
+
+	
+	
+	
+	
+}

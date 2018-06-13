@@ -1,0 +1,40 @@
+package com.zngk.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.DepartmentsDao;
+import com.zngk.service.DepartmentsService;
+
+@Service
+@Transactional
+public class DepartmentsServiceImpl implements DepartmentsService{
+
+	@Autowired
+	private DepartmentsDao departmentsDao;
+	/**
+	 * 
+	 * @param jgdm 机构代码
+	 * @return
+	 */
+	public List<Map<String,Object>> getDepartmentsByCode(String jgdm) {
+		return departmentsDao.getDepartmentsByCode(jgdm);
+	}
+	
+	/**
+	 * 根据机构名称查询机构
+	 * @param jgmc  机构名称
+	 * @return
+	 */
+	public List<Map<String,Object>> getDepartmentsByName(String jgmc) {
+		return departmentsDao.getDepartmentsByName(jgmc);
+	}
+
+	
+	
+	
+}

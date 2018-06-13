@@ -1,0 +1,17 @@
+package com.zngk.entity;
+
+import java.io.Serializable;
+
+
+public interface IDomain extends Serializable {
+
+	/**
+	 * @param domain
+	 */
+	public IDomain beforeImportSave(IDomain domain);
+	
+	/**
+	 * @param domain
+	 */
+	public String beforeImportValidate(IDomain domain);
+}

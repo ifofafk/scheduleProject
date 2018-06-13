@@ -1,0 +1,39 @@
+package com.zngk.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.dto.LoginLogsDto;
+import com.zngk.dto.OperationLogsDto;
+import com.zngk.entity.ResultGson;
+import com.zngk.service.OperationService;  
+ 
+@Api(value="operation")  
+@Controller  
+@RequestMapping(value="operation")  
+public class OperationController { 
+	@Autowired
+	private OperationService operationLogsService;
+    @RequestMapping(value = "/queryLoginList",method=RequestMethod.POST) 
+    @ResponseBody
+    @ApiOperation(value="登录日志查询",httpMethod="POST",notes="登录日志查询",response=ResultGson.class)  
+    public ResultGson queryLoginList(@RequestBody InputPageDataDTO<LoginLogsDto> data) { 
+    	ResultGson resultGson =operationLogsService.queryLoginList(data);
+        return resultGson;
+    } 
+    
+    @RequestMapping(value = "/queryOperationList",method=RequestMethod.POST) 
+    @ResponseBody
+    @ApiOperation(value="操作日志查询",httpMethod="POST",notes="操作日志查询",response=ResultGson.class)  
+    public ResultGson queryOperationList(@RequestBody InputPageDataDTO<OperationLogsDto> data) { 
+    	ResultGson resultGson =operationLogsService.queryOperationList(data);
+        return resultGson;
+    } 
+}  

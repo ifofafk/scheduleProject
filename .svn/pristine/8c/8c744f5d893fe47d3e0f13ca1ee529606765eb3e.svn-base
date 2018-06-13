@@ -1,0 +1,187 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+import java.util.List;
+
+import com.zngk.entity.ExcelEntity;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 人员布控批量表单
+ */
+public class BkBatchSaveDTO implements Serializable {
+
+	private static final long serialVersionUID = -455080711240341310L;
+
+	//导入操作编号. 上传完了返回的
+	private String drczno;
+//	//布控类别  1身份证  2wifi 3车辆
+//	private Integer bkType;
+	
+	//是否外部调用 0本系统   1外部调用
+	private Integer jkFlag;
+
+	//excel解析出的正确数据(包含人员姓名，身份证)
+	private List<ExcelEntity> sucessList;
+	
+	//资源范围:  1上网   2旅馆  3火车  4民航订座 (飞机) 5民航进港(飞机)  6 长途客车 
+	private String zyfw;
+	
+	//地域范围 (当选择为火车 飞机时使用，始发地武汉，终点站dyfw)
+	private String dyfw;
+	
+	//人员类型
+	private String rylx;
+	
+	//布控开始时间
+	private String startTime;
+	
+	//布控开始时间
+	private String endTime;
+	
+	//网吧地域范围
+	private String wbdyfw;
+	
+	//旅店地域范围
+	private String lvdyfw;
+	
+	//布控原因
+	private String bkyy;
+	
+	//接收人警号
+	private String jsrjh;
+	
+	//接收人姓名
+	private String jsrxm;
+
+	//接收人手机
+	private String jsrsjh;
+
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	public Integer getJkFlag() {
+		return jkFlag;
+	}
+
+	public void setJkFlag(Integer jkFlag) {
+		this.jkFlag = jkFlag;
+	}
+
+	public List<ExcelEntity> getSucessList() {
+		return sucessList;
+	}
+
+	public void setSucessList(List<ExcelEntity> sucessList) {
+		this.sucessList = sucessList;
+	}
+
+	public String getZyfw() {
+		return zyfw;
+	}
+
+	public void setZyfw(String zyfw) {
+		this.zyfw = zyfw;
+	}
+
+	public String getDyfw() {
+		return dyfw;
+	}
+
+	public void setDyfw(String dyfw) {
+		this.dyfw = dyfw;
+	}
+
+	public String getRylx() {
+		return rylx;
+	}
+
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getWbdyfw() {
+		return wbdyfw;
+	}
+
+	public void setWbdyfw(String wbdyfw) {
+		this.wbdyfw = wbdyfw;
+	}
+
+	public String getLvdyfw() {
+		return lvdyfw;
+	}
+
+	public void setLvdyfw(String lvdyfw) {
+		this.lvdyfw = lvdyfw;
+	}
+
+	public String getBkyy() {
+		return bkyy;
+	}
+
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+
+	public String getJsrjh() {
+		return jsrjh;
+	}
+
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+
+	public String getJsrxm() {
+		return jsrxm;
+	}
+
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+
+	public String getJsrsjh() {
+		return jsrsjh;
+	}
+
+	public void setJsrsjh(String jsrsjh) {
+		this.jsrsjh = jsrsjh;
+	}
+
+	@Override
+	public String toString() {
+		return "BkBatchSaveDTO [drczno=" + drczno + ", jkFlag=" + jkFlag + ", sucessList=" + sucessList + ", zyfw="
+				+ zyfw + ", dyfw=" + dyfw + ", rylx=" + rylx + ", startTime=" + startTime + ", endTime=" + endTime
+				+ ", wbdyfw=" + wbdyfw + ", lvdyfw=" + lvdyfw + ", bkyy=" + bkyy + ", jsrjh=" + jsrjh + ", jsrxm="
+				+ jsrxm + ", jsrsjh=" + jsrsjh + "]";
+	}
+
+	
+	
+	
+	
+	
+	
+}

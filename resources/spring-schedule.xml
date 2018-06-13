@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc"
+	   xmlns:task="http://www.springframework.org/schema/task"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+         http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+	   	http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+	
+	<!-- 定时任务注解开启  -->
+	<task:annotation-driven scheduler="scheduler" />
+	<!-- 配置多线程 -->
+	<task:scheduler id="scheduler" pool-size="10"/>	
+
+	<!-- 扫描定时任务包，暂时无用-->
+    <!-- <context:component-scan base-package="cn.com.jxTec.schedulePro.task"/> -->
+    
+	
+	<!-- 指定相应的类===对应的方法===触发时间 --> 
+	
+	<!-- 1.  硚口 环卫车辆信息 -->
+	<bean id="FthwCarTask" class="cn.com.jxTec.schedulePro.task.FthwCarTask"/>  
+    <!-- 1.1 硚口 环卫==获取车辆信息==每晚零点零一分获取前一天的 -->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwCarTask" method="getFthwCarList" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 1.2  车辆实时轨迹信息==每4秒触发   -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwCarTask" method="getFthwCarPositionTask" cron="0/4 * * * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 1.3 车辆当前油耗==每6秒触发 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwCarTask" method="getFthwCarRealtimeOilTask" cron="* * 0/1 * * ?"/>   
+	</task:scheduled-tasks>
+	
+
+	<!-- 2. 硚口固废车辆  -->
+	<bean id="WhgfCarTask" class="cn.com.jxTec.schedulePro.task.WhgfCarTask"/> 
+	<!-- 2.1 硚口固废==车辆信息==每晚零点零一分获取前一天的  --> 
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="WhgfCarTask" method="getWhgfCarList" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 2.2硚口固废车辆 实时轨迹==每4秒触发  -->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="WhgfCarTask" method="getWhgfCarPositionTask" cron="0/4 * * * * ?"/>   
+	</task:scheduled-tasks>
+	
+		
+	
+	
+	<!-- 4. 智能公厕 -->
+	<bean id="FthwWCTask" class="cn.com.jxTec.schedulePro.task.FthwWCTask"/>
+	<!-- 4.1 获取当前实时人流量  每天零点零一分查前天平均 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwWCTask" method="getWhhwWcNowPersonNumTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 4.2 获取当前实时臭气值 每6小时更新一次 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwWCTask" method="getWhhwWcNowOdorTask" cron="* * 0/6 * * ?"/>   
+	</task:scheduled-tasks>
+	
+	
+	<!-- 5. 硚口环卫 智能公厕 报表 -->
+	<bean id="FthwReportInteWCTask" class="cn.com.jxTec.schedulePro.task.FthwReportInteWCTask"/>  
+   	<!-- 5.1 人流量报表      每天零点零一分统计昨天-->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportInteWCTask" method="getFthwWcPersonNumTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 5.2 臭气值报表     每天零点零一分 统计昨天-->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportInteWCTask" method="getFthwWcOdorTask" cron="*0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 5.3 温度统计报表  每天零点零一分 统计昨天-->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportInteWCTask" method="getFthwWcTemperatureTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 5.4 湿度统计报表  每天零点零一分 统计昨天-->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportInteWCTask" method="getFthwWcHumidityTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	
+	
+	<!-- 6.硚口环卫车辆报表 -->
+	<bean id="FthwReportCarTask" class="cn.com.jxTec.schedulePro.task.FthwReportCarTask"/>
+	<!-- 6.1 报表-查询报警报表记录  -->
+    <task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportCarTask" method="getFthwReportCarHistoryAlarmTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 6.2 查询运行日报表记录 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportCarTask" method="getFthwReportCarRunDayTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 6.3 查询车辆百公里油耗分析表记录 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportCarTask" method="getFthwReportCarOilKmTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	<!-- 6.4 查询车辆油耗单位分析表 -->
+	<task:scheduled-tasks>   
+    	<task:scheduled ref="FthwReportCarTask" method="getFthwFuelAnalysisTask" cron="0 01 0 * * ?"/>   
+	</task:scheduled-tasks>
+	
+
+	
+	
+    
+</beans>

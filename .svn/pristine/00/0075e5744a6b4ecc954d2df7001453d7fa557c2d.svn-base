@@ -1,0 +1,34 @@
+package com.zngk.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.zngk.entity.FlowInfo;
+import com.zngk.entity.User;
+
+public interface FlowService {
+
+
+	/**
+	 * 根据当前用户存储审批流程 返回当前级别的流转id
+	 * SJGLY直接终审通过
+	 */
+	public String createFlowByUser(User user, String objectId);
+	
+	/**
+	 * 根据zkno(flowInfo的objectId currNode)和用户审批级别去更新,返回flowId
+	 * @return
+	 */
+	public String updateFlowInfo(User user, String zkno, String state,String spyy);
+	
+	/**
+	 * 通过objectId去查所有流转信息
+	 */
+	public List<Map<String,Object>> queryFlowByObjectId(String spno);
+	
+	
+	/**
+	 * 根据当前用户名查询出上下级流转信息
+	 */
+	public FlowInfo queryFlowByUser(User user);
+}

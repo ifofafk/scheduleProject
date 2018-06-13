@@ -1,0 +1,29 @@
+package com.zngk.common.constant.rybk;
+
+import com.zngk.common.constant.IConstant;
+
+public enum RybkEmun implements IConstant{
+
+	RYBK_ERROR_INREDLIST("130001","红名单人员，不可被布控"),
+	RYBK_EMPTY_SFZH("130002","身份证不能为空"),
+	RYBK_ERROR_SFZH("130003","身份证格式不正确"),
+	PARAM_EMPTY("130003","请求参数错误");
+	
+	private String code;
+	private String desc;
+	
+	RybkEmun(String code, String desc) {
+		this.code = code;
+		this.desc = desc;
+	}
+	
+	@Override
+	public String getCode() {
+		return this.code;
+	}
+
+	@Override
+	public String getDesc() {
+		return this.desc;
+	}
+}

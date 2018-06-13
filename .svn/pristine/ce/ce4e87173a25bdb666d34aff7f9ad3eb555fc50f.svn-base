@@ -1,0 +1,20 @@
+#session invalid time
+#  dan wei ms 3600 is one hours
+time=3600
+#密钥
+encryptionKey=zngk@2017
+#布控照片url
+bukongPic=http://10.73.7.249:13202/dynamic_control
+#图片存放位置
+pictureUrl=/home/xguest/PhotoTest/
+#服务器映射url
+requestUrl=http://10.73.93.49:9000/sfz/
+#人脸接口说明字段
+action=
+#人脸库id（48@DEFAULT 测试库） 正式库 231@DEFAULT
+repository_id=48@DEFAULT
+#图片存放文件夹名称
+#fileUrl=D:/PhotoTest/
+#人脸布控图片存放的文件夹
+fileUrl=/home/xguest/rlsbpicture/
+

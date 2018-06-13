@@ -1,0 +1,412 @@
+package com.zngk.controller;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.rybk.RybkEmun;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.BatchEntityDTO;
+import com.zngk.dto.BkBatchSaveDTO;
+import com.zngk.dto.BkDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.RedListService;
+import com.zngk.service.RybkService;
+import com.zngk.service.ToLogonService;
+import com.zngk.util.DataModel;
+import com.zngk.util.PubMethod;
+import com.zngk.util.ValidationUtils;
+
+@Controller
+@RequestMapping(value = "rybk")
+public class RybkController {
+
+	@Autowired
+	private RybkService rybkService;
+
+	@Autowired
+	private RedListService redListService;
+
+	@Autowired
+	private ToLogonService tologonservies;
+    
+	/**
+	 * 查询身份证号相关信息，需要登录
+	 * @param sfzh  需要查询的身份证号
+	 * @author WangChen
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/queryGkBySfzh")
+	@ApiOperation(value = "查询全国人口库接口", httpMethod = "GET", notes = "查询全国人口的接口", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson queryGkBySfzh(@RequestParam(value = "sfzh") String sfzh, @RequestParam(value="jkFlag")Integer jkFlag,@RequestParam(value = "outterJh",required=false)String outterJh) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		HttpSession httpSession = request.getSession();
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if(jkFlag == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+//		HttpServletRequest request = (ServletRequestAttributes)PubMethod.getSession();
+		
+		//身份证非空校验
+		if (StringUtils.isBlank(sfzh)) {
+			throw new ServiceException(RybkEmun.RYBK_EMPTY_SFZH.getCode(),RybkEmun.RYBK_EMPTY_SFZH.getDesc()); // 注意身份证字母大小写
+		}
+		//身份证合法校验
+		if(!ValidationUtils.IDCardValidate(sfzh.trim())) {
+			throw new ServiceException(RybkEmun.RYBK_ERROR_SFZH.getCode(),RybkEmun.RYBK_ERROR_SFZH.getDesc()); // 身份证最后一位校验
+		}
+
+//		// 根据session来回去登录信息
+		DataModel dataModel = (DataModel) httpSession.getAttribute("modelData");
+		if (dataModel == null || dataModel.getUser() == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(), UserEmun.SESSION_EXPIRES.getDesc());
+		}
+
+		// 查看登录人的信息
+		User user = null;
+		String userName = "";
+		String jySfzh = "";
+		String jh = "";
+		if(dataModel != null) {
+			user = dataModel.getUser();
+			userName = user.getName();
+			jySfzh = user.getYhsfzh();
+			jh = user.getAccount();
+		}
+		//先查询数据库,如果数据库有则不调用全国人口库,如果数据库没有,则调用全国人口库,并把数据insert 到数据库中
+		Map<String,Object> map = rybkService.selectPerson(sfzh);
+		if(map==null||map.isEmpty()){
+			// 调用全国人口的接口,把信息插入到人员信息表中personinfo
+			try{
+				rybkService.save(sfzh, userName, jySfzh, jh);
+				//此处为了偷懒,重新调用一下数据库
+				map = rybkService.selectPerson(sfzh);
+			}catch(Exception ex){
+				ex.printStackTrace();
+				result.setMsg("查询无结果");
+				result.setStatus(ResultGson.ERROR_CODE_500);
+				result.setSuccess(false);
+			}
+		}
+		// 然后根据身份证号区查询详细信息
+		if (map.isEmpty()) {
+			result.setMsg("查询无结果");
+			result.setStatus(ResultGson.ERROR_CODE_500);
+			result.setSuccess(false);
+		}
+		result.setData(map);
+
+		return result;
+	}
+
+	/**
+	 * 地图单个身份证布控的保存
+	 * @param bkDTO
+	 * @throws Exception
+	 * @author WangChen
+	 */
+	@Transactional(rollbackFor = { Exception.class, RuntimeException.class })
+	@RequestMapping(value = "/saveSingleRybk")
+	@ApiOperation(value = "地图单个布控的保存", httpMethod = "PUT", notes = "地图单个布控的保存", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson saveSingleRybk(@RequestBody BkDTO bkDTO,@RequestParam(value = "outterJh",required=false)String outterJh) throws ServiceException {
+		ResultGson result = ResultGson.ok();
+
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		HttpSession httpSession = request.getSession();
+		
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}		
+		//指定账号登录(开放页面调用)
+		if(bkDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+		
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(), UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		//身份证非空校验
+		if (StringUtils.isBlank(bkDTO.getSfzh())) {
+			throw new ServiceException(RybkEmun.RYBK_EMPTY_SFZH.getCode(),RybkEmun.RYBK_EMPTY_SFZH.getDesc()); // 注意身份证字母大小写
+		}
+		//身份证合法校验
+		if(!ValidationUtils.IDCardValidate(bkDTO.getSfzh().trim())) {
+			throw new ServiceException(RybkEmun.RYBK_ERROR_SFZH.getCode(),RybkEmun.RYBK_ERROR_SFZH.getDesc()); // 身份证最后一位校验
+		}
+		try {
+			// 红名单
+			boolean inRedListOrNot = redListService.queryInRedListBySfzh(bkDTO.getSfzh());
+			if (inRedListOrNot) {
+				throw new ServiceException(RybkEmun.RYBK_ERROR_INREDLIST.getCode(),RybkEmun.RYBK_ERROR_INREDLIST.getDesc());
+			}
+			// 调用保存的方法
+			rybkService.RequestMap(userinfo, bkDTO);
+		} catch (Exception e) {
+			throw new ServiceException("false", e.getMessage());
+		}
+
+		return result;
+	}
+
+	// **********************************人员批量布控相关接口**********************************//
+
+	/**
+	 * 上传Excel 解析 返回上传成功的数据，失败数据存入数据库
+	 * 
+	 * @since ZNGK v2.0
+	 * @return
+	 * @author WangChen
+	 * @throws Exception
+	 */
+	@Transactional(rollbackFor = { Exception.class, RuntimeException.class })
+	@RequestMapping(value = "/uploadExcel")
+	@ApiOperation(value = "上传Excel", httpMethod = "POST", notes = "上传excel并载入数据", response = BatchEntityDTO.class)
+	@ResponseBody
+	public ResultGson onDoUploadExcel(HttpServletRequest request, HttpSession httpSession, HttpServletResponse response,@RequestParam(value = "outterJh",required=false)String outterJh)
+			throws ServiceException {
+		ResultGson result = ResultGson.ok();
+
+		MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+		List<MultipartFile> files = multipartRequest.getFiles("file");
+		if (null == files || files.size() < 1) {
+			throw new ServiceException("false", "文件少于1个!");
+		}
+		MultipartFile file = files.get(0); // 文件
+
+		String fileName = request.getParameter("fileName");
+		if (StringUtils.isBlank(fileName)) {
+			throw new ServiceException("false", "请上传excel!");
+		} else {
+			if (!fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {
+				throw new ServiceException("false", "文件格式不正确!");
+			}
+		}
+
+		// 当前用户ip地址
+//		String ip = PubMethod.getCallerIpMe(request);
+//		String jkFlag = "0";
+//		if(StringUtils.isNotBlank(request.getParameter("jkFlag"))){
+//			jkFlag = request.getParameter("jkFlag");
+//		}
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if("1".equals(request.getParameter("jkFlag"))) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(), UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		
+		BatchEntityDTO batchEntity = null;// 正常和失败的
+		// bkType预留： 1.人员批量布控 2.wifi批量布控 3.车辆批量布控 4.人脸批量布控
+		if (StringUtils.isBlank(request.getParameter("bkType"))) {
+			throw new ServiceException("false", "请传入正确的模板类型!");
+		}
+
+		int bkType = Integer.parseInt(request.getParameter("bkType"));
+		String drczno = PubMethod.getUUID("drczno_");// 导入操作编号
+
+		// 1.纯解析excel
+		List<Map<String, String>> list;
+		try {
+			list = rybkService.parseExcel(file.getInputStream(), fileName, bkType);
+		} catch (IOException e) {
+			throw new ServiceException("false", e.getMessage());
+		} catch (Exception e) {
+			throw new ServiceException("false", e.getMessage());
+		}
+
+		// 2.清洗数据,将错误数据生成excel存入服务器!
+		batchEntity = rybkService.washExcelData(list, drczno, bkType);
+		batchEntity.setDrczno(drczno);
+
+		//这一步放到，用户点击"提交申请"来做
+//		// 3.插入正确数据
+//		if (batchEntity.getSucessList() != null && !batchEntity.getSucessList().isEmpty()) {
+//			// 按业务类别执行插入数据操作
+//			rybkService.saveBatchData(userinfo, ip, batchEntity.getSucessList(), drczno, bkType,jkFlag);
+//		}
+
+		result.setData(batchEntity);
+		return result;
+	}
+
+	
+	/**
+	 * 身份证布控，保存批量布控信息
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/saveBatchRybk")
+	@ApiOperation(value = "保存布控信息", httpMethod = "POST", notes = "保存布控信息", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson saveBatchRybk(@RequestBody BkBatchSaveDTO bkBatchSaveDTO,@RequestParam(value = "outterJh",required=false)String outterJh){
+		ResultGson result = ResultGson.ok();
+		
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+
+		if(StringUtils.isBlank(bkBatchSaveDTO.getDrczno()) || bkBatchSaveDTO.getJkFlag() == null || !(bkBatchSaveDTO.getSucessList() != null && !(bkBatchSaveDTO.getSucessList().isEmpty())) ) {
+			throw new ServiceException(RybkEmun.PARAM_EMPTY.getCode(), RybkEmun.PARAM_EMPTY.getDesc());
+		}
+
+		
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		
+		//指定账号登录(开放页面调用)
+		if(bkBatchSaveDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+		
+		User userinfo = (User) httpSession.getAttribute("userinfo");
+		if (userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(), UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		
+		try {	
+			rybkService.saveBatchData(userinfo, PubMethod.getCallerIpMe(request), bkBatchSaveDTO);
+		} catch (Exception e) {
+			throw new ServiceException("false","执行出错");
+		}
+		
+		return result;
+	}
+
+	
+	/**
+	 * 查询核对布控信息列表,展示正确的数据
+	 * 
+	 * @param drczno
+	 *            导入操作编号
+	 * @param pageNum
+	 *            页码
+	 * @param pageSize
+	 *            页面容量
+	 * @author WangChen
+	 * @return
+	 */
+	@RequestMapping(value = "/queryListByDrczno")
+	@ApiOperation(value = "查询核对布控信息列表", httpMethod = "GET", notes = "查询核对布控信息列表", response = ResultGson.class)
+	@ResponseBody
+	public ResultGson queryListByDrczno(@RequestParam("drczno") String drczno, @RequestParam("pageNum") Integer pageNum,
+			@RequestParam("pageSize") Integer pageSize) {
+		ResultGson result = ResultGson.ok();
+
+		pageNum = pageNum != 0 ? pageNum : 1;
+		pageSize = pageSize != 0 ? pageSize : 10;
+
+		UserCenterPage data = rybkService.queryListZkryxx(drczno, pageNum, pageSize); // 列表翻页
+		Map<String,Object> map = new HashMap<>();
+		map.put("pageNum", pageNum);
+		map.put("pageTotal", data.getAllRecordNO());
+		map.put("list", data.getMapList());
+		result.setData(map);
+		
+		return result;
+
+	}
+}

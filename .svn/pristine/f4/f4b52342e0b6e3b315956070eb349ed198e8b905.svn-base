@@ -1,0 +1,29 @@
+package com.zngk.common.compent;
+
+/**
+ * 常量
+ * Created by lei on 2017-02-23.
+ */
+public class Constant {
+    public static final String YEAR = "year";
+
+    public static final String MONTH = "month";
+
+    public static final String DAY = "day";
+
+    public static final String HOUR = "hour";
+
+    public static final String WGLYSP = "wglysp";
+
+    public static final String YHXXLIST = "yhxxlist";
+
+    /**
+	 * Session中当前用户的属性名称
+	 */
+	public static final String USER_SESSION_ATTRIBUTE = "userinfo";
+
+	/**
+	 * 开发模式的jvm参数名称
+	 */
+	public static final String DEVELOPER_MODE_PARAMETER = "devMode";
+}

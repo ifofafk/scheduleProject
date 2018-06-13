@@ -1,0 +1,59 @@
+package com.zngk.dao.imp;
+
+import java.sql.Types;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.ZkRyjbxxDao;
+
+@Repository("ZkRyjbxxDao")
+public class ZkRyjbxxDaoImp implements ZkRyjbxxDao {
+
+	@Autowired
+    private JdbcTemplate jdbcTemplate;
+	
+	@Override
+	public int delete(String zkno) {
+		/**
+		 * 删除布控信息表
+		 */
+		String delZkryxxbSqlStr = "delete from T_ZK_RYXXB t where t.zkno in (?)";
+		/**
+		 * 删除布控人员信息
+		 */
+		String delZkryxxSqlStr = "delete from T_ZK_RYXX t where t.zkno in (?)";
+		/**
+		 * 删除人员基本信息
+		 */
+		String delryjbxxbSqlStr = "delete from T_RYJBXX t where t.zkno in (?)";
+		
+		/**
+		 * 删除布控信息接收人
+		 */
+		String delXxjsrSqlStr = "delete from T_ZK_XXJSR t where t.zkno in (?)";
+		
+		String[] paramArray = new String[]{zkno};
+		int[] typeArray = new int[]{Types.VARCHAR};
+		int count = 0;
+		
+		// 删除布控信息接收人
+		jdbcTemplate.update(delXxjsrSqlStr, paramArray, typeArray);
+		
+		// 删除人员基本信息
+		jdbcTemplate.update(delryjbxxbSqlStr, paramArray, typeArray);
+		
+		// 删除布控人员信息
+		jdbcTemplate.update(delZkryxxSqlStr, paramArray, typeArray);
+		
+		// 删除布控信息表
+		count = jdbcTemplate.update(delZkryxxbSqlStr, paramArray, typeArray);
+		
+		return count;
+	}
+	
+	
+	
+
+}

@@ -1,0 +1,120 @@
+package com.zngk.service.impl;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.PersonPmDao;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.WallService;
+
+@Service
+@Transactional
+public class WallServiceImpl implements WallService{
+
+	@Autowired
+	private PersonPmDao personPmDao;
+
+	/**
+	 * 统计数字   旧wall
+	 * @author WangChen
+	 * @return
+	 */
+	@Override
+	public Map<String,Object> getNums(){
+		Map<String,Object> result = new HashMap<String,Object>();
+		//1 左上角
+		List<Map<String, Object>> bkNum =  personPmDao.getDistrictBkNum();//布控数据
+		List<Map<String, Object>> bdNum =  personPmDao.getDistrictBdNum();//比对数据
+		//2 右上角
+		List<Map<String, Object>> rylxNum = personPmDao.getRylxNum();//人员类型数据
+		//3 右下角
+		Map<String, Object> zyfwBkNum = personPmDao.getZyfwBkNum();//资源范围 布控
+		Map<String, Object> zyfwBdNum = personPmDao.getZyfwBdNum();//资源范围 比中
+		//4 左下角
+		List<Map<String, Object>> sjzyNum = personPmDao.getSjzyNum();//其他库的数据资源，查询我们的结果库
+		//5 中间
+		
+		//将布控数据和比对数据放进一个List
+		for(Map<String, Object> one :bkNum) {
+			for(Map<String, Object> two :bdNum){
+				if(one.get("dwmc").equals(two.get("dwmc"))){
+					one.put("numBd", two.get("num"));
+				}
+			}
+		}
+		result.put("bkNum", bkNum);
+//		result.put("bdNum", bdNum);
+		result.put("rylxNum", rylxNum);
+		result.put("zyfwBkNum", zyfwBkNum);
+		result.put("zyfwBdNum", zyfwBdNum);
+		result.put("sjzyNum", sjzyNum);
+		return result;
+	}
+	
+	
+	
+	//***新wall***
+	
+	//1. 各分局布控人数排名
+	@Override
+	public List<Map<String, Object>> getNumOne(){
+		List<Map<String, Object>> bkNum =  personPmDao.getDistrictBkNum();//布控数据
+		return bkNum;
+	}
+	
+	//2. 数据资源，按type区分：1.上网  2.国内旅客(旅店) 3.铁路  4.民航订座  5.民航进港  6.长途客车  7.wifi 8.车辆卡口
+	@Override
+	public List<Map<String, Object>> getNumTwo(){
+		List<Map<String, Object>> sjzyNum = personPmDao.getSjzyNum();//其他库的数据资源，查询我们的结果库
+		
+		return sjzyNum;
+	}
+	
+	//3  布控人员分类
+	@Override
+	public List<Map<String, Object>> getNumThree(){
+		List<Map<String, Object>> rylxNum = personPmDao.getRylxNum();//人员类型数据
+
+		return rylxNum;
+	}
+	
+	//4  布控人员轨迹
+	@Override
+	public Map<String, Object> getNumFour(String startTime, String endTime){
+		return personPmDao.getBkrygj(startTime, endTime);
+	}
+	
+	//5 布控结果分析
+	@Override
+	public List<Map<String, Object>> getNumFive(){
+		//8个  每一个里含4个参数
+		return personPmDao.getBkjgfx();
+	}
+	
+	//6  最近活动的被预警人员
+	@Override
+	public UserCenterPage getNumSix(Integer pageNum, Integer pageSize){
+		return personPmDao.getYjry(pageNum, pageSize);
+	}
+	
+	@Override
+	public Map<String,Object> getBkTj(String yhm){
+		
+		return personPmDao.getBkTj(yhm);
+	}
+
+	@Override
+	public Map<String,Object> getDeptBkTj(User user,String dwdm, String role) {
+		//查看所有
+		if("SJGLY".equalsIgnoreCase(role) || "SYSTEM".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
+			dwdm = null;//查询所有机构的
+		}
+		return personPmDao.getDeptBkTj(user,dwdm, role);
+	}
+}

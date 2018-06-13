@@ -1,0 +1,14 @@
+package com.zngk.dao;
+
+import com.zngk.dto.InputPageDataDTO;
+import com.zngk.dto.LoginLogsDto;
+import com.zngk.dto.OperationLogsDto;
+import com.zngk.entity.ResultGson;
+
+public interface OperationDao {
+
+	ResultGson queryLoginList(InputPageDataDTO<LoginLogsDto> data);
+
+	ResultGson queryOperationList(InputPageDataDTO<OperationLogsDto> data);
+
+}

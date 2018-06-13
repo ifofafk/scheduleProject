@@ -1,0 +1,43 @@
+package com.zngk.service;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dto.WifiBkBatchSaveDTO;
+import com.zngk.dto.WifiBkDTO;
+import com.zngk.entity.User;
+
+public interface WifiService {
+	
+	public void saveWifi(HttpSession httpSession, WifiBkDTO wifiBkDTO, User userinfo) throws Exception;
+	
+	/** 
+	 * 王晨
+	 * 2017-8-31上午10:34:21
+	 * 批量wifi布控信息表
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 */
+	@Transactional
+	public void batchUdpate(User userinfo,String ip,WifiBkBatchSaveDTO wifiBkBatchSaveDTO) throws Exception;
+	
+	
+	/**
+	 * 批量更新人员智控信息的参数
+	 * @param request
+	 * @return
+	 */
+	public String[] zkjbxxParam(WifiBkDTO wifiBkDTO);
+	
+	
+	/**
+	 * 批量插入信息接收人的参数组装
+	 * @param request
+	 * @return
+	 */
+	public String[] getCzryParam(WifiBkBatchSaveDTO wifiBkBatchSaveDTO, User userinfo);
+	
+	
+}

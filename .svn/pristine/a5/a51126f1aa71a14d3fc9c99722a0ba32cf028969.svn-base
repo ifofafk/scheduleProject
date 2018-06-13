@@ -1,0 +1,35 @@
+package com.zngk.common;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import com.google.gson.internal.LinkedTreeMap;
+import com.zngk.entity.PictureVo;
+import com.zngk.util.GsonUtils;
+import com.zngk.util.HttpUtil;
+@Service
+public class SendPictureData {
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	@Value("${bukongPic}")
+	private String url;
+	public void sendPicture(PictureVo pictureVo,String zkno)throws Exception{
+		String msg = GsonUtils.getInstance().toJSON(pictureVo);
+		String responseInfo = HttpUtil.postSysLogInfo(msg,url);
+		if(responseInfo.contains("no face detected!")){
+		  throw new Exception("no face detected!");
+		}
+		//String = "{"resultcode":"0","response":{"picture_uri":"normal:\/\/repository-builder\/20171123\/PX5I83j5LxgXJxDYKlBY+A==@1@DEFAULT","face_image_uri":"normal:\/\/repository-builder\/20171123\/26XIOSsj5RHTlFyYFmK9HA==@2@DEFAULT","face_image_id":"13510803177078792@DEFAULT"},"resultmessage":"?.."}";
+		System.out.println(responseInfo);
+		responseInfo = responseInfo.replaceAll("normal:", "").replaceAll("\\\\", "").replaceAll("//", "").replaceAll("\\/", "").replaceAll("\"", "'");
+		System.out.println(responseInfo);
+		LinkedTreeMap bean = (LinkedTreeMap)GsonUtils.getInstance().getBean(responseInfo, LinkedTreeMap.class);
+		LinkedTreeMap response = (LinkedTreeMap)bean.get("response");
+		String face_image_id =(String)response.get("face_image_id");
+		String sql ="insert into t_zkno_pictureid(zkno,face_image_id) values('"+zkno+"','"+face_image_id+"')";
+		jdbcTemplate.update(sql);
+	}
+
+}

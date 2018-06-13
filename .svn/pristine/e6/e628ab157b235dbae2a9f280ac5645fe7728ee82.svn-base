@@ -1,0 +1,35 @@
+package com.zngk.service;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dto.CarBkBatchSaveDTO;
+import com.zngk.dto.CarBkDTO;
+import com.zngk.entity.User;
+
+public interface CarService {
+	
+	public void saveCar(CarBkDTO carBkDTO, User userinfo);
+	
+	
+	@Transactional
+	public void batchUdpateCar(User userinfo, String ip, CarBkBatchSaveDTO carBkBatchSaveDTO)throws Exception;
+	
+	
+	/**
+	 * 批量更新人员智控信息的参数
+	 * @param request
+	 * @return
+	 */
+	public String[] zkjbxxParam(CarBkDTO carBkDTO);
+	
+	
+	/**
+	 * 获取参数  --批量
+	 * @param userinfo
+	 * @param carBkBatchSaveDTO
+	 * @return
+	 */
+	public String[] getCzryParam(User userinfo,CarBkBatchSaveDTO carBkBatchSaveDTO);
+	
+	
+}

@@ -1,0 +1,186 @@
+package com.zngk.entity;
+
+import java.io.Serializable;
+
+public class FlowInfo implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6610217780592731159L;
+	
+	/**
+	 * 流转编号
+	 */
+	private String flowId;
+	/**
+	 * 流转对象ID,例如zkno,方便统计查看
+	 */
+	private String objectId;
+	/**
+	 * 当前流转节点,例如某部门代码
+	 */
+	private String currNode;
+	/**
+	 * 当前流转节点,例如警号010
+	 */
+	private String currPerson;
+	/**
+	 * 当前流转级别
+	 */
+	private Integer currLevel;	
+	/**
+	 * 上一流转节点,例如某部门代码
+	 */
+	private String previousNode;
+
+	/**
+	 * 下一流转节点,例如某部门代码
+	 */
+	private String nextNode;
+		
+	/**
+	 * 创建时间
+	 */
+	private String createTime;
+	/**
+	 * 流转转台
+	 */
+	private Integer flowState;
+	/**
+	 * 业务类型 1:审批
+	 */
+	private Integer flowType;	
+	/**
+	 * 备注
+	 */
+	private String remark;	
+	/**
+	 * 创建人
+	 */
+	private String creator;
+	
+	/**
+	 * 更新时间
+	 */
+	private String updator;
+
+	/**
+	 * 流转处理结果
+	 */
+	private Integer flowResult;
+	
+	public String getFlowId() {
+		return flowId;
+	}
+
+	public void setFlowId(String flowId) {
+		this.flowId = flowId;
+	}
+
+	public String getObjectId() {
+		return objectId;
+	}
+
+	public void setObjectId(String objectId) {
+		this.objectId = objectId;
+	}
+
+	public String getCurrNode() {
+		return currNode;
+	}
+
+	public void setCurrNode(String currNode) {
+		this.currNode = currNode;
+	}
+
+	public String getCurrPerson() {
+		return currPerson;
+	}
+
+	public void setCurrPerson(String currPerson) {
+		this.currPerson = currPerson;
+	}
+
+	public Integer getCurrLevel() {
+		return currLevel;
+	}
+
+	public void setCurrLevel(Integer currLevel) {
+		this.currLevel = currLevel;
+	}
+
+	public String getPreviousNode() {
+		return previousNode;
+	}
+
+	public void setPreviousNode(String previousNode) {
+		this.previousNode = previousNode;
+	}
+
+	public String getNextNode() {
+		return nextNode;
+	}
+
+	public void setNextNode(String nextNode) {
+		this.nextNode = nextNode;
+	}
+
+	public String getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(String createTime) {
+		this.createTime = createTime;
+	}
+
+	public Integer getFlowState() {
+		return flowState;
+	}
+
+	public void setFlowState(Integer flowState) {
+		this.flowState = flowState;
+	}
+
+	public Integer getFlowType() {
+		return flowType;
+	}
+
+	public void setFlowType(Integer flowType) {
+		this.flowType = flowType;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public String getUpdator() {
+		return updator;
+	}
+
+	public void setUpdator(String updator) {
+		this.updator = updator;
+	}
+
+	public Integer getFlowResult() {
+		return flowResult;
+	}
+
+	public void setFlowResult(Integer flowResult) {
+		this.flowResult = flowResult;
+	}
+	
+	
+}

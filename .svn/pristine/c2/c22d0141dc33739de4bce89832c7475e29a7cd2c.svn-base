@@ -1,0 +1,72 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 布控信息接收人
+ */
+public class BkJsrDTO implements Serializable {
+
+	
+	private static final long serialVersionUID = -762201614221797476L;
+
+	//导入操作编号
+	private String drczno;
+	
+	//智控编号
+	private String zkno;
+	
+	//接收人姓名
+	private String jsrxm;
+	
+	//接收人警号
+	private String jsrjh;
+	
+	//接收人手机号
+	private String jsrsjh;
+
+	public String getDrczno() {
+		return drczno;
+	}
+
+	public void setDrczno(String drczno) {
+		this.drczno = drczno;
+	}
+
+	public String getZkno() {
+		return zkno;
+	}
+
+	public void setZkno(String zkno) {
+		this.zkno = zkno;
+	}
+
+	public String getJsrxm() {
+		return jsrxm;
+	}
+
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+
+	public String getJsrjh() {
+		return jsrjh;
+	}
+
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+
+	public String getJsrsjh() {
+		return jsrsjh;
+	}
+
+	public void setJsrsjh(String jsrsjh) {
+		this.jsrsjh = jsrsjh;
+	}
+	
+	
+	
+}

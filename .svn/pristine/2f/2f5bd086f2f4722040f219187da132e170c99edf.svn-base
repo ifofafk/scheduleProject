@@ -1,0 +1,125 @@
+/**
+ * 
+ */
+package com.zngk.util;
+
+import java.util.Hashtable;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.zngk.entity.User;
+
+/**
+ * 描述：在线用户管理器
+ * 
+ * @author Sky
+ * 
+ */
+public final class OnLineUserManager {
+	/**
+	 * 在线用户集合
+	 */
+	private Map<String, User> onLineUserMap = new Hashtable<String, User>(5);
+
+	/**
+	 * 
+	 */
+	private static final OnLineUserManager onLineUserManager = new OnLineUserManager();
+
+	/**
+	 * 最大在线用户
+	 */
+	private long maxOnLineUser = 0;
+
+	/**
+	 * 
+	 */
+	private static Log log = LogFactory.getLog(OnLineUserManager.class);
+
+	/**
+	 * 
+	 */
+	private OnLineUserManager() {
+
+	}
+
+	/**
+	 * 获取在线用户管理器实例
+	 * 
+	 * @return
+	 */
+	public static OnLineUserManager getIntance() {
+		return onLineUserManager;
+	}
+
+	/**
+	 * 添加在线用户
+	 * 
+	 * @param user
+	 */
+	public void addOnLine(User user) {
+		log.info("用户【" + user.getName() + "】登录系统...");
+		onLineUserMap.put(user.getAccount(), user);
+		setMaxOnLineUser();
+	}
+
+	/**
+	 * 移除在线用户
+	 * 
+	 * @param user
+	 */
+	public void removeOnLine(User user) {
+		log.info("用户【" + user.getName() + "】退出系统...");
+		onLineUserMap.remove(user.getAccount());
+		setMaxOnLineUser();
+	}
+
+	/**
+	 * 当前用户是否在线
+	 * 
+	 * @param user
+	 * @return
+	 */
+	public boolean isOnLine(User user) {
+		return onLineUserMap.containsKey(user.getAccount());
+	}
+
+	/**
+	 * 获取全部在线用户人数
+	 * 
+	 * @return
+	 */
+	public int getOnLineNum() {
+//		System.out.println(onLineUserMap.size() + ":" + onLineUserMap);
+		return onLineUserMap.size();
+	}
+
+	/**
+	 * 获取全部在线用户
+	 * 
+	 * @return
+	 */
+	public final Map<String, User> getOnLineUserMap() {
+		return onLineUserMap;
+	}
+
+	/**
+	 * @return the maxOnLineUser
+	 */
+	public long getMaxOnLineUser() {
+		return maxOnLineUser;
+	}
+
+	/**
+	 * @param maxOnLineUser
+	 *            the maxOnLineUser to set
+	 */
+	public void setMaxOnLineUser() {
+		if (this.maxOnLineUser < getOnLineNum()) {
+			this.maxOnLineUser = getOnLineNum();
+		}
+	}
+
+}

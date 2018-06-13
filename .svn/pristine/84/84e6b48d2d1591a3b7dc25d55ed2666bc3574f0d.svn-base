@@ -1,0 +1,340 @@
+package com.zngk.service.impl;
+
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.InsertDataToFhUtils;
+import com.zngk.dao.CarDao;
+import com.zngk.dao.RybkDao;
+import com.zngk.dto.CarBkBatchSaveDTO;
+import com.zngk.dto.CarBkDTO;
+import com.zngk.entity.ExcelEntity;
+import com.zngk.entity.InsertDataToFh;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.CarService;
+import com.zngk.util.PubMethod;
+import com.zngk.util.StringUtil;
+
+@Service
+public class CarServiceImpl implements CarService {
+	@Autowired
+	private RybkDao rybkDao;
+	
+	private final static String BKLX = "3"; // 车辆布控
+
+//	/**
+//	 * 批量更新wifi智控信息表
+//	 */
+//	private final static String BATCH_UPD_ZKRYXXB = "update T_ZK_RYXXB set RYZKKSSJ=?,RYZKJSSJ=?,BKYY=?,RYLX=?,CZSJ=sysdate,STATE='1' where ZKNO in (select t.zkno from T_ZK_RYXX t where t.DRCZNO=?)";
+//
+//	/**
+//	 * 批量插入信息接收人
+//	 */
+//	private final static String INSERT_XXJSR = "insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,?,?,?,T.DRCZNO,T.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = ?";
+
+
+	@Autowired
+	private CarDao carDao;
+
+	@Autowired
+	private InsertDataToFhUtils insertDataToFhUtils;
+	
+	@Override
+	@Transactional
+	public void saveCar(CarBkDTO carBkDTO, User userinfo) {
+		String xm = carBkDTO.getXm();
+		String sfzh = carBkDTO.getSfzh();
+		String cph = carBkDTO.getCph();//车牌号
+	    String cpys = carBkDTO.getCpys();//车牌颜色
+	    String cllx = carBkDTO.getCllx();//车辆类型
+	    String clys = carBkDTO.getClys();//车辆颜色
+	    String clpp = carBkDTO.getClpp();//车品牌
+	    
+		String startTime = carBkDTO.getStartTime();
+		String endTime = carBkDTO.getEndTime();
+		String rylx = carBkDTO.getRylx();
+		String yy = carBkDTO.getBkyy();
+
+		String zkno = PubMethod.getUUID("zkno_");
+
+		// 当前用户信息
+		String sqrjh = userinfo.getAccount();// 申请人警号
+		String sqrxm = userinfo.getName();// 申请人姓名
+		String sqrdwdm = userinfo.getDepartmentCode();// 申请人单位代码
+		String sqrdwmc = userinfo.getDepartmentName();// 申请人单位名称
+		String userSfzh = userinfo.getYhsfzh();// 申请人身份证号
+		String drczno = PubMethod.getUUID("drczno_");
+
+		// ***接收人信息，如果不填默认为当前用户
+		// 接收人警号
+		String jsrjh = carBkDTO.getJsrjh();
+		if (StringUtils.isBlank(carBkDTO.getJsrjh())) {
+			jsrjh = userinfo.getAccount();
+		} 
+		// 接收人姓名
+		String jsrxm = carBkDTO.getJsrxm();
+		if (StringUtils.isBlank(carBkDTO.getJsrxm())) {
+			jsrxm = userinfo.getName();
+		}
+		// 接收人手机
+		String jsrsjh = carBkDTO.getJsrsjh();
+		if (StringUtils.isBlank(carBkDTO.getJsrsjh())) {
+			jsrsjh = userinfo.getSj();
+		} 
+		
+		
+		String stateRyxxb = "0";// 审批状态
+		if (!userinfo.getRoleList().contains("PTYH")) {
+			stateRyxxb = "1";// 审批状态
+		}
+		// 0 保存人员信息表T_ZK_RYXXB
+		String sql1 = "insert into T_ZK_RYXXB (zkno,ryxm,rysfzh,sqrjh,sqrxm,sqrdwdm,sqrdwmc,ryzkkssj,ryzkjssj,czsj,state,bkyy,rylx,bklx,cph,cpys,cllx,clys,clpp)"
+				+ "values('" + zkno + "','" + xm + "','" + sfzh + "','" + sqrjh + "','" + sqrxm + "','" + sqrdwdm
+				+ "','" + sqrdwmc + "','" + startTime + "','" + endTime + "',sysdate,'" + stateRyxxb + "','" + yy
+				+ "','" + rylx + "','" + BKLX + "','" +cph+ "','"+cpys+"','"+cllx+"','"+clys+"','"+clpp+"')";
+		// 1 保存布控人员信息
+		String sql2 = "insert into T_ZK_RYXX (RYNO,RYXM,RYSFZH,DRCZNO,DRCZJH,DRCZR,DRCZSJ,DRCZDWDM,ZKNO) " + "values ('"
+				+ zkno + "','" + xm + "','" + sfzh + "','" + drczno + "','" + jsrjh + "','" + sqrxm + "',sysdate,'"
+				+ sqrdwdm + "','" + zkno + "')";
+		
+		// 2 保存人员基本信息params.get("zkno"),params.get("username"),params.get("usercard"),params.get("drczno"),params.get("jsrjh"),params.get("sqrxm"),params.get("sqrdwdm"),params.get("zkno")
+		String sql3 = " insert into T_RYJBXX (ZKNO,RYXM,RYSFZH) values ('" + zkno + "','" + sqrxm + "','" + userSfzh
+				+ "')";
+		// 3 保存信息接收人
+		String sql4 = " insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,'" + jsrjh + "','" + jsrxm + "','" + jsrsjh
+				+ "',t.DRCZNO,t.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = '" + drczno + "' ";
+		
+		carDao.saveCar(sql1,true);
+		carDao.saveCar(sql2,false);
+		carDao.saveCar(sql3,false);
+		carDao.saveCar(sql4,false);
+		
+		//TODO if("1".equals(state))需要往烽火库填写数据
+		//插入烽火数据库只要是接口调用就不需要审批. 已经布控的插入烽火库
+		if(!userinfo.getRoleList().contains("PTYH")) {
+			InsertDataToFh insertDataToFh = new InsertDataToFh();
+			
+			insertDataToFh.setTydic_dynamic_id(zkno);//存入智控id
+			insertDataToFh.setDispositionCategory(2);//'布控类别(1.人2.机动车3.WIFI)',
+			insertDataToFh.setTargetFeature_SFZHM(sfzh);//布控对象特征_人员身份证',
+			insertDataToFh.setTargetFeature_XM(xm);//'布控对象特征_人员姓名',
+			
+			insertDataToFh.setTargetFeature_CPHM(cph);//'布控对象特征_机动车车牌号'
+		    insertDataToFh.setTargetFeature_CPYS(cpys);//车牌颜色
+			insertDataToFh.setTargetFeature_CLLX(cllx);//车辆类型
+			insertDataToFh.setTargetFeature_CLYS(clys);//车辆颜色
+			insertDataToFh.setTargetFeature_CLPP(clpp);//车品牌
+			
+			insertDataToFh.setApplicantName(sqrxm);//申请人姓名
+			if(StringUtils.isNotBlank(userinfo.getSj()) && !"null".equals(userinfo.getSj())){
+				insertDataToFh.setApplicantInfo(userinfo.getSj()); //'申请人联系方式', 暂时给的是当前用户手机号(疑问，接口用户，sj号为空)
+			}
+			insertDataToFh.setApplicantOrg(sqrdwmc);//'申请单位'  //是单位名称还是单位代码
+			insertDataToFh.setBeginTime(startTime);//'开始时间',
+			insertDataToFh.setEndTime(endTime);//'结束时间',
+			insertDataToFh.setReceiveMobile(jsrsjh);//'告警信息接收手机号(可填写多个手机号，用分隔符隔开)',
+			insertDataToFh.setReason(yy);//'布控原因',
+			
+			insertDataToFhUtils.insertData(insertDataToFh);
+		}
+	}
+
+	/**
+	 * 批量更新wifi布控信息表
+	 * @param userinfo
+	 * @param wifiBkDTO
+	 * @throws Exception
+	 */
+	@Override
+	@Transactional
+	public void batchUdpateCar(User userinfo, String ip, CarBkBatchSaveDTO carBkBatchSaveDTO) throws Exception {
+
+		String state = "0";//布控状态在点击"申请布控"时修改
+		if(userinfo.getRoleList() != null && !userinfo.getRoleList().contains("PTYH")) {
+			state = "1";
+		}
+		// 同一批次操作时间
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		String drcznoTime = sdf.format(new Date());
+
+		// 申请人单位名称
+		String sqrdwmc = userinfo.getDepartmentName();
+		String ryzkkssj = carBkBatchSaveDTO.getStartTime();
+		String ryzkjssj = carBkBatchSaveDTO.getEndTime();
+		String bkyy = carBkBatchSaveDTO.getBkyy();
+		String rylx = carBkBatchSaveDTO.getRylx();
+		int jkFlag = carBkBatchSaveDTO.getJkFlag();//调用类型
+		String drczno = carBkBatchSaveDTO.getDrczno();//统一操作编号
+		List<ExcelEntity> list = carBkBatchSaveDTO.getSucessList();//excel解析的数据
+		
+		// 布控人员信息
+		String zkrySqlStr = "insert into T_ZK_RYXX (ZKNO,RYXM,RYSFZH,DRCZJH,DRCZR,DRCZDWDM,DRCZNO,IP,RYNO,DRCZSJ) values (?,?,?,?,?,?,?,?,?,";
+		// 人员基本信息
+		String ryjbxxSqlStr = "insert into T_RYJBXX (ZKNO,RYXM,RYSFZH,SQRDWMC) values (?,?,?,?)";
+		// 3 车辆布控
+		String zkSqlStr3 = " insert into T_ZK_RYXXB (ZKNO,RYXM,RYSFZH,SQRJH,SQRXM,SQRDWDM,SQRDWMC,STATE,BKLX,CPH,JKFLAG,RYZKKSSJ,RYZKJSSJ,BKYY,RYLX,CZSJ) values (?,?,?,?,?,?,?,'" +state+ "','3',?,'" +jkFlag+ "',?,?,?,?,sysdate) ";
+//													zkno,ryxm,rysfzh, sqrjh, sqrxm, sqrdwdm,sqrdwmc, cph, ,ryzkkssj,ryzkjssj,bkyy,rylx
+		try {
+			for (ExcelEntity excelData : list) {
+				// 智控编号
+				String zkno = excelData.getZkno();
+				// 人员编号
+				String ryno = PubMethod.getUUID("ryno_");
+				// 车牌号
+				String cph = excelData.getCph();
+				
+				// 插入参数
+				String[] clParam = getAddParam(excelData, userinfo, zkno);
+
+				// 智控参数
+				String[] zkParam = StringUtil.mergeArray(clParam, new String[] { sqrdwmc,cph ,ryzkkssj,ryzkjssj,bkyy,rylx });
+				// 智控人员信息参数
+				String[] zkryParam = StringUtil.mergeArray(clParam, new String[] { drczno, ip, ryno });
+				// 人员基本信息
+				String[] ryjbxxParam = getAddRyjbxxParam(excelData, userinfo, zkno);
+
+				
+				// 插入布控信息表
+				rybkDao.update(zkSqlStr3, zkParam, new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,Types.VARCHAR, Types.VARCHAR,
+						Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR  });
+				// 插入布控人员信息表
+				rybkDao.update(zkrySqlStr + "to_date('" + drcznoTime + "','yyyy/MM/dd hh24:mi:ss'))", zkryParam,
+						new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+								Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+								Types.VARCHAR });
+				// 插入人员基本信息表
+				rybkDao.update(ryjbxxSqlStr, ryjbxxParam,
+						new int[] { Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR });
+				
+				
+				
+			}
+			// 插入当前批量提交布控人员信息的操作人员到接收人信息表中
+			String[] paramArray = getCzryParam(userinfo,carBkBatchSaveDTO);
+			int[] typeCzry = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+			//批量插入信息接收人
+			String insertXxjsrSqlStr = " insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,?,?,?,T.DRCZNO,T.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = ?";
+			//批量插入接收人
+			rybkDao.update(insertXxjsrSqlStr, paramArray, typeCzry);
+			//插入烽火数据库只要是接口调用就不需要审批. 已经布控的插入烽火库
+			if("1".equals(state)) {
+				insertDataToFhUtils.insertFhDB(drczno, 2, userinfo);
+			}
+		} catch (Exception sqle) {
+			throw new ServiceException("false","执行错误，请与系统管理员联系！");
+		}
+	}
+
+	/**
+	 * 批量更新人员智控信息的参数
+	 * 王晨
+	 * @param request
+	 * @return
+	 */
+	@Override
+	public String[] zkjbxxParam(CarBkDTO carBkDTO) {
+		// 人员智控开始时间
+		String ryzkkssj = carBkDTO.getStartTime();
+		// 人员结束开始时间
+		String ryzkjssj = carBkDTO.getEndTime();
+		// 布控原因
+		String bkyy = carBkDTO.getBkyy();
+		// 人员类型
+		String rylx = carBkDTO.getRylx();
+		// 导入操作编号
+		String drczno = carBkDTO.getDrczno();
+
+		String[] param = new String[] { ryzkkssj, ryzkjssj, bkyy, rylx, drczno };
+		return param;
+	}
+
+	/**
+	 * 批量插入信息接收人的参数组装
+	 * 王晨
+	 * @param request
+	 * @return
+	 */
+	@Override
+	public String[] getCzryParam(User userinfo,CarBkBatchSaveDTO carBkBatchSaveDTO) {
+		
+		// 导入操作编号
+		String drczno = carBkBatchSaveDTO.getDrczno();
+
+		// 接收人警号
+		String jsrjh = userinfo.getAccount();
+		if (StringUtils.isNotBlank(carBkBatchSaveDTO.getJsrjh())) {
+			jsrjh = carBkBatchSaveDTO.getJsrjh();
+		}
+		// 接收人姓名
+		String jsrxm = userinfo.getName();
+		if (StringUtils.isNotBlank(carBkBatchSaveDTO.getJsrxm())) {
+			jsrxm = carBkBatchSaveDTO.getJsrxm();
+		}
+		// 接收人手机
+		String jsrsj = userinfo.getSj();
+		if (StringUtils.isNotBlank(carBkBatchSaveDTO.getJsrsjh())) {
+			jsrsj = carBkBatchSaveDTO.getJsrsjh();
+		}
+		String[] params = new String[] { jsrjh, jsrxm, jsrsj, drczno };
+		return params;
+	}
+	
+	
+	/**
+	 * 获取参数--批量使用
+	 * 
+	 * @param excelData
+	 * @param userinfo
+	 * @param zkno
+	 * @return
+	 * @throws Exception
+	 */
+	private String[] getAddParam(ExcelEntity excelData, User userinfo, String zkno) {
+		// 人员姓名
+		String ryxm = excelData.getRyxm();
+		// 人员身份证号
+		String rysfzh = excelData.getRysfzh();
+
+		// 申请人警号
+		String sqrjh = userinfo.getAccount();
+		// 申请人姓名
+		String sqrxm = userinfo.getName();
+		// 申请人单位代码
+		String sqrdwdm = userinfo.getDepartmentCode();
+		
+		// 参数数组
+		String[] param = new String[] { zkno, ryxm, rysfzh, sqrjh, sqrxm, sqrdwdm };
+		return param;
+	}
+	/**
+	 * 获取人员基本信息参数数组--批量使用
+	 * 
+	 * @param domain
+	 * @param userinfo
+	 * @param zkno
+	 * @return
+	 * @throws Exception
+	 */
+	private String[] getAddRyjbxxParam(ExcelEntity excelData, User userinfo, String zkno) {
+
+		// 人员姓名
+		String ryxm = excelData.getRyxm();
+		// 人员身份证号
+		String rysfzh = excelData.getRysfzh();
+		// 申请人单位名称
+		String sqrdwmc = userinfo.getDepartmentName();
+		// 参数数组
+		String[] param = new String[] { zkno, ryxm, rysfzh, sqrdwmc };
+		return param;
+	}
+
+
+}

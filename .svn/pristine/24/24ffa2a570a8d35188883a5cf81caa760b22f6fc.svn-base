@@ -1,0 +1,24 @@
+package com.zngk.dao.imp;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.CarDao;
+import com.zngk.util.PubMethod;
+
+@Repository
+public class CarDaoImpl extends AbstractDao implements CarDao{
+
+	
+
+	@Override
+	public void saveCar(String sql,boolean flag) {
+		add(sql);
+		HttpSession session = PubMethod.getSession();
+		if(flag)
+		operationLogUtil.recordLog(session, "1", "车辆布控人员", null, "执行车辆布控操作");
+	}
+	
+
+}

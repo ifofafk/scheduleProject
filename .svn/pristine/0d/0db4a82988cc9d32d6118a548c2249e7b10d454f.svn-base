@@ -1,0 +1,77 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 权限列表查询条件
+ */
+public class PowerListQueryDTO implements Serializable{
+
+	private static final long serialVersionUID = 5331275468454113753L;
+
+	//警号
+	private String jh;
+	
+	//机构代码
+	private String jgdm;
+	
+	//机构名称
+	private String jgmc;
+	
+	//用户的身份证号
+	private String sfzh;
+	
+	//是否管理员   1是  0否
+	private int isGly;
+
+	public String getJh() {
+		return jh;
+	}
+
+	public void setJh(String jh) {
+		this.jh = jh;
+	}
+
+	public String getJgdm() {
+		return jgdm;
+	}
+
+	public void setJgdm(String jgdm) {
+		this.jgdm = jgdm;
+	}
+
+	public String getJgmc() {
+		return jgmc;
+	}
+
+	public void setJgmc(String jgmc) {
+		this.jgmc = jgmc;
+	}
+
+	public String getSfzh() {
+		return sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+
+	public int getIsGly() {
+		return isGly;
+	}
+
+	public void setIsGly(int isGly) {
+		this.isGly = isGly;
+	}
+
+	@Override
+	public String toString() {
+		return "PowerListQueryDTO [jh=" + jh + ", jgdm=" + jgdm + ", jgmc=" + jgmc + ", sfzh=" + sfzh + ", isGly="
+				+ isGly + "]";
+	}
+	
+	
+	
+}

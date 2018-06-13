@@ -1,0 +1,60 @@
+package com.zngk.dao.imp;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.dao.DepartmentsDao;
+
+@Repository("DepartmentsDao")
+public class DepartmentsDaoImp extends AbstractDao implements DepartmentsDao{
+	
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+	@Override
+	public List<Map<String, Object>> getDepartmentsByCode(String jgdm) {
+		String sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB where 1=1 ";
+		//为空查询所有
+		if(StringUtils.isNotBlank(jgdm)) {
+			sql = sql + " and yhjgdm='" +jgdm+ "' or yhsjdwdm='" +jgdm+ "'";
+			//如果是最高权限的"武汉市公安局",要求看所有
+			if("420100000000".equals(jgdm)){
+				sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB ";
+			}
+		}
+		
+		return jdbcTemplate.queryForList(sql);
+	}
+
+
+	@Override
+	public List<Map<String, Object>> getDepartmentsByName(String jgmc) {
+		String sql = " select yhjgdm, yhm from USER_YHZZGLB_GLB where 1=1 ";
+		//为空查询所有
+		if(StringUtils.isNotBlank(jgmc)) {
+			sql = sql + " and jgmc like '%" +jgmc+ "%'";
+		}
+		return jdbcTemplate.queryForList(sql);
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}

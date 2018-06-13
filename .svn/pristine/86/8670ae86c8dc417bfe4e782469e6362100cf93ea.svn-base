@@ -1,0 +1,8 @@
+package com.zngk.dao;
+
+public interface RlsbDao {
+
+	void saveRlsb(String sql,boolean flag);
+	void updateState(String sql,String zkno);
+	
+}

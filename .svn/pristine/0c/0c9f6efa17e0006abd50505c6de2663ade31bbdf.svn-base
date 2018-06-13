@@ -1,0 +1,135 @@
+package com.zngk.entity;
+
+public class FaceDateVo {
+	private String key_face_image_url;
+    private String repository_name;
+    private String camera_longitude;
+    private String personname;
+    private String camera_name;
+    private String personidcard;
+    private String camera_address;
+    private String face_image_url;
+    private String similarity;
+    private String camera_latitude;
+    private String timestamp_begin;
+    private String face_dynamic_id;
+    private String picture_url;
+    private String token;
+    private String face_image_id;
+    
+    
+    
+	public FaceDateVo(String key_face_image_url, String repository_name, String camera_longitude, String personname,
+			String camera_name, String personidcard, String camera_address, String face_image_url, String similarity,
+			String camera_latitude, String timestamp_begin, String face_dynamic_id, String picture_url, String token,
+			String face_image_id) {
+		super();
+		this.key_face_image_url = key_face_image_url;
+		this.repository_name = repository_name;
+		this.camera_longitude = camera_longitude;
+		this.personname = personname;
+		this.camera_name = camera_name;
+		this.personidcard = personidcard;
+		this.camera_address = camera_address;
+		this.face_image_url = face_image_url;
+		this.similarity = similarity;
+		this.camera_latitude = camera_latitude;
+		this.timestamp_begin = timestamp_begin;
+		this.face_dynamic_id = face_dynamic_id;
+		this.picture_url = picture_url;
+		this.token = token;
+		this.face_image_id = face_image_id;
+	}
+	public String getFace_image_id() {
+		return face_image_id;
+	}
+	public void setFace_image_id(String face_image_id) {
+		this.face_image_id = face_image_id;
+	}
+	public String getKey_face_image_url() {
+		return key_face_image_url;
+	}
+	public void setKey_face_image_url(String key_face_image_url) {
+		this.key_face_image_url = key_face_image_url;
+	}
+	public String getRepository_name() {
+		return repository_name;
+	}
+	public void setRepository_name(String repository_name) {
+		this.repository_name = repository_name;
+	}
+	public String getCamera_longitude() {
+		return camera_longitude;
+	}
+	public void setCamera_longitude(String camera_longitude) {
+		this.camera_longitude = camera_longitude;
+	}
+	public String getPersonname() {
+		return personname;
+	}
+	public void setPersonname(String personname) {
+		this.personname = personname;
+	}
+	public String getCamera_name() {
+		return camera_name;
+	}
+	public void setCamera_name(String camera_name) {
+		this.camera_name = camera_name;
+	}
+	public String getPersonidcard() {
+		return personidcard;
+	}
+	public void setPersonidcard(String personidcard) {
+		this.personidcard = personidcard;
+	}
+	public String getCamera_address() {
+		return camera_address;
+	}
+	public void setCamera_address(String camera_address) {
+		this.camera_address = camera_address;
+	}
+	public String getFace_image_url() {
+		return face_image_url;
+	}
+	public void setFace_image_url(String face_image_url) {
+		this.face_image_url = face_image_url;
+	}
+	public String getSimilarity() {
+		return similarity;
+	}
+	public void setSimilarity(String similarity) {
+		this.similarity = similarity;
+	}
+	public String getCamera_latitude() {
+		return camera_latitude;
+	}
+	public void setCamera_latitude(String camera_latitude) {
+		this.camera_latitude = camera_latitude;
+	}
+	public String getTimestamp_begin() {
+		return timestamp_begin;
+	}
+	public void setTimestamp_begin(String timestamp_begin) {
+		this.timestamp_begin = timestamp_begin;
+	}
+	public String getFace_dynamic_id() {
+		return face_dynamic_id;
+	}
+	public void setFace_dynamic_id(String face_dynamic_id) {
+		this.face_dynamic_id = face_dynamic_id;
+	}
+	public String getPicture_url() {
+		return picture_url;
+	}
+	public void setPicture_url(String picture_url) {
+		this.picture_url = picture_url;
+	}
+	public String getToken() {
+		return token;
+	}
+	public void setToken(String token) {
+		this.token = token;
+	}
+    
+
+}

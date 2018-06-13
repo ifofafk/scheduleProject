@@ -1,0 +1,55 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+/**
+ * 
+ * @author 熊铸
+ *ZNGK
+ * 2017年11月6日
+ */
+public class LoginLogsDto implements Serializable{
+
+	private static final long serialVersionUID = 1L;
+	/**登陆人**/
+	private String name;
+	/**登陆ip**/
+	private String ip;
+	/**登陆开始时间**/
+	private String startTime;
+	/**登陆结束时间**/
+	private String endTime;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+	
+
+}

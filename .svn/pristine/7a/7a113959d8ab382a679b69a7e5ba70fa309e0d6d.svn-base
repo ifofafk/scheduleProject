@@ -1,0 +1,78 @@
+package com.zngk.entity;
+
+public class Param {
+
+	 String xm=null;//姓名
+	 String sfzh=null;//身份证号
+	 String jsrjh=null;//接收人警号
+	 String jsrxm=null;//接收人姓名
+	/* String jsrsj=null;//接收人手机
+*/   String bksj_start=null;//开始布控时间
+	 String bksj_end=null;//结束布控时间
+	 String rylx=null;//人员类型
+	 String bkyy=null;//布控原因
+	 String zyfw=null;//资源范围
+	 String dyfw=null;//地域范围
+	public String getXm() {
+		return xm;
+	}
+	public void setXm(String xm) {
+		this.xm = xm;
+	}
+	public String getSfzh() {
+		return sfzh;
+	}
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+	public String getJsrjh() {
+		return jsrjh;
+	}
+	public void setJsrjh(String jsrjh) {
+		this.jsrjh = jsrjh;
+	}
+	public String getJsrxm() {
+		return jsrxm;
+	}
+	public void setJsrxm(String jsrxm) {
+		this.jsrxm = jsrxm;
+	}
+	public String getBksj_start() {
+		return bksj_start;
+	}
+	public void setBksj_start(String bksj_start) {
+		this.bksj_start = bksj_start;
+	}
+	public String getBksj_end() {
+		return bksj_end;
+	}
+	public void setBksj_end(String bksj_end) {
+		this.bksj_end = bksj_end;
+	}
+	public String getRylx() {
+		return rylx;
+	}
+	public void setRylx(String rylx) {
+		this.rylx = rylx;
+	}
+	public String getBkyy() {
+		return bkyy;
+	}
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+	public String getZyfw() {
+		return zyfw;
+	}
+	public void setZyfw(String zyfw) {
+		this.zyfw = zyfw;
+	}
+	public String getDyfw() {
+		return dyfw;
+	}
+	public void setDyfw(String dyfw) {
+		this.dyfw = dyfw;
+	}
+	 
+	 
+}

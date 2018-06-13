@@ -1,0 +1,28 @@
+package com.zngk.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import com.zngk.entity.FlowInfo;
+import com.zngk.entity.User;
+
+public interface FlowDao{
+	
+	/**
+	 * 保存流转
+	 * @param flowInfo
+	 */
+	public void saveFlow(FlowInfo flowInfo);
+	
+	/**
+	 * 根据objectId和curr_level和curr_node去更新对应的flow_state, remark, updator, update_time  ,返回flowId
+	 */
+	public String updateFlow(User user, String zkno, String state, String spyy);
+	
+	/**
+	 * 根据objectId去查询所有流转信息
+	 * @param zkno
+	 * @return
+	 */
+	public List<Map<String,Object>> queryFlowByObjectId(String objectId);
+}

@@ -1,0 +1,220 @@
+package com.zngk.dao.imp;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.zngk.common.ZkDataForm;
+import com.zngk.dao.MainfoDao;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.util.DataModel;
+import com.zngk.util.PageSqlUtils;
+import com.zngk.util.ZKDXUtil;
+
+@Repository("MainfoDao")
+public class MainfoDaoImp implements MainfoDao{
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+		
+    private final Logger logger = Logger.getLogger(getClass());
+
+    /**
+     * 获取各单位人员智控数据
+     * @param dataModel
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    @Override
+    public UserCenterPage getReceiveAlarmRyzkData(HttpSession httpSession, Integer page, Integer pageSize) {
+        UserCenterPage userCenterPage = UserCenterPage.getInstance(page, pageSize);
+        String sql = getRyzkDataSql(httpSession);
+        String totalSQL = "select count(0) from (" + sql + ")";
+        Integer ryzksjListyspTotal = jdbcTemplate.queryForObject(totalSQL, Integer.class);
+        userCenterPage.setAllRecordNO(ryzksjListyspTotal);
+        //封装总页数
+        Integer ryzksjListallPageNumber = ryzksjListyspTotal / pageSize + (ryzksjListyspTotal % pageSize == 0 ? 0 : 1);
+        userCenterPage.setAllPageNO(ryzksjListallPageNumber);
+        String sqlString = PageSqlUtils.createPageSql(sql, page, pageSize);
+        logger.info("获取各单位人员智控数据SQL ：" + sqlString);
+        List<Map<String, Object>> ryzksjList = jdbcTemplate.queryForList(sqlString);
+        userCenterPage.setMapList(ryzksjList);
+        return userCenterPage;
+    }
+
+    public String  getRyzkDataSql(HttpSession httpSession){
+    	// 当前用户信息
+    	User userinfo = (User)httpSession.getAttribute("userinfo");
+//        String date=ZKDXUtil.getDate();
+        StringBuffer sb = new StringBuffer();
+        sb.append("select t.*,t1.sqsm from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.zkno=t1.spno  where state='1'");
+        sb.append( ZKDXUtil.createPriSql(userinfo));
+        sb.append("order by  czsj desc");
+        String sql = sb.toString();
+        return sql;
+    }
+/***
+ * 2查询已申请智控名单(待审批)
+ */
+    @Override
+    public List<Map<String,Object>> getRequestZkData(HttpSession httpSession ){
+    	// 当前用户信息
+    	User userinfo = (User)httpSession.getAttribute("userinfo");
+        StringBuffer sb = new StringBuffer();
+        sb.append("select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,sqrdwmc,t1.spzt,t1.sqsm,t2.yhsjdw,t2.yhm from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO  left join USER_YHZZGLB_GLB t2  on  t.sqrdwdm =  t2.yhjgdm  where state = '0'  ");
+        sb.append( ZKDXUtil.createPriSql(userinfo));
+        String sql = sb.toString();
+        List<Map<String, Object>> mapList = jdbcTemplate.queryForList(sql);
+        return mapList;
+    }
+
+
+
+
+    /**
+     * 查询自已待审批智控名单
+     * @param dataModel
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    @Override
+    public UserCenterPage getMeRequestZkData(BkListQueryDTO data, User user, Integer page, Integer pageSize) {
+        UserCenterPage userCenterPage = UserCenterPage.getInstance(page, pageSize);
+        String sql = getMeRequestZkDataSql(data,user);
+        String totalSQL = "select count(0) from (" + sql + ")";
+        Integer getmeryzksjListTotal = jdbcTemplate.queryForObject(totalSQL, Integer.class);
+        userCenterPage.setAllRecordNO(getmeryzksjListTotal);
+        //封装总页数
+        Integer ryzksjListallPageNumber = getmeryzksjListTotal / pageSize + (getmeryzksjListTotal % pageSize == 0 ? 0 : 1);
+        userCenterPage.setAllPageNO(ryzksjListallPageNumber);
+        String sqlString = PageSqlUtils.createPageSql(sql, page, pageSize);
+        logger.info("查询自已待审批智控名单SQL ：" + sqlString);
+        List<Map<String, Object>> getmeryzksjList = jdbcTemplate.queryForList(sqlString);
+        userCenterPage.setMapList(getmeryzksjList);
+        return userCenterPage;
+    }
+
+
+
+    /***
+     * 5查询自已待审批智控名单
+     */
+
+    public String getMeRequestZkDataSql(BkListQueryDTO data, User user){
+    	
+        StringBuffer sb = new StringBuffer();
+        sb.append("select t.zkno,t.ryxm,t.rysfzh,t.sqrxm,t.sqrdwdm,t.sqrdwmc,t.sqrjh,t.RYZKKSSJ,t.RYZKJSSJ,t.state,t.bkyy,t1.spzt,t1.sqsm,t1.pcsspr,t1.pcsspyj,t2.yhsjdw,t2.yhm from T_ZK_RYXXB t left join T_ZK_SPB t1 on t.ZKNO = t1.SPNO  left join USER_YHZZGLB_GLB t2  on  t.sqrdwdm =  t2.yhjgdm  where 1=1 ");
+        sb.append(ZKDXUtil.createPriSql(user));
+        sb.append(getQuerySql(data));
+        // 审批状态
+        Integer state = data.getState(); //data.getParameter("state");
+        if(null == state) {
+        	state = 0;
+        }
+//        request.setAttribute("zkstate", state);//需要和前端确认
+        
+        /*if(YSPUtil.yhsf(user).equals("sjgly")) {
+            //市局管理员同意
+            sb.append("and t1.SPZT='5'");
+        } else if(YSPUtil.yhsf(user).equals("fjgly")) {
+            //分局管理员同意上报
+            sb.append("and t1.SPZT='3'");
+        } else  if(YSPUtil.yhsf(user).equals("pcsgly")){
+            //派出所管理员同意上报
+            sb.append("and t1.SPZT='1'");
+        }else{*/
+            sb.append(" and t.state='" +state+ "'");
+//        }
+        sb.append(" order by t.czsj desc,t.zkno desc ");//根据1个主键再排序，不然会分页浮动
+        String sql = sb.toString();
+        return sql;
+    }
+    
+    /**
+     * 返回查询条件   让前端区回显查询条件
+     * @param request
+     * @return
+     */
+	public String getQuerySql(BkListQueryDTO data){
+    	StringBuffer queryStr = new StringBuffer();
+    	//被控人姓名
+    	String bkrxm = data.getBkrxm();
+    	//身份证号
+    	String sfzh = data.getSfzh();
+    	//申请人
+    	String sqr = data.getSqr();
+    	//申请单位
+    	String sqdw = data.getSqdw();
+    	//申请原因
+    	String sqyy = data.getSqyy();
+    	if(null != bkrxm && !("").equals(bkrxm))
+    	{
+    		queryStr.append(" and RYXM like '%"+bkrxm.trim()+"%'");
+//    		request.setAttribute("bkrxm", bkrxm);
+    	}
+    	if(null != sfzh && !("").equals(sfzh))
+    	{
+    		queryStr.append(" and RYSFZH like '%"+sfzh.trim()+"%'");
+//    		request.setAttribute("sfzh", sfzh);
+    	}
+    	if(null != sqr && !("").equals(sqr))
+    	{
+    		queryStr.append(" and SQRXM like '%"+sqr.trim()+"%'");
+//    		request.setAttribute("sqr", sqr);
+    	}
+    	if(null != sqdw && !("").equals(sqdw))
+    	{
+    		queryStr.append(" and SQRDWMC like '%"+sqdw.trim()+"%'");
+//    		request.setAttribute("sqdw", sqdw);
+    	}
+    	if(null != sqyy && !("").equals(sqyy))
+    	{
+    		queryStr.append(" and BKYY like '%"+sqyy.trim()+"%'");
+//    		request.setAttribute("sqyy", sqyy);
+    	}
+    	return queryStr.toString();
+    }
+
+	/***
+	 * 查询当天在控人数
+	 */
+    @Override
+    public Integer getNowPerson (HttpSession httpSession){
+    	// 当前用户信息
+    	User user = (User)httpSession.getAttribute("userinfo");
+        StringBuffer sb = new StringBuffer();
+//        DateFormat df = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
+//        Date date= new Date();
+        sb.append("select count(*) from T_ZK_RYXXB where  state = '1'");
+        sb.append( ZKDXUtil.createPriSql(user));
+        String sql = sb.toString();
+        Integer num = jdbcTemplate.queryForObject(sql, Integer.class);
+        return num;
+    }
+
+    /**
+     * 4查询智控对象比对结果
+     *
+     * @param
+     * @return
+     */
+    @Override
+    public List<Map<String,Object>>getResultData(DataModel dataModel, ZkDataForm zkDataForm){
+        String sfzh=zkDataForm.getSfzh();
+        String sql = "select zdryxm,sfzh,ykmc,hdfssj,hdfsddxz,hdxgxx from T_ZKGJB where sfzh='"+sfzh+"' ";
+        List<Map<String,Object>> mapList =jdbcTemplate.queryForList(sql);
+        return mapList;
+    }
+    
+
+
+}

@@ -1,0 +1,161 @@
+package com.zngk.service.impl;
+
+import java.io.File;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
+import com.zngk.common.SendPictureData;
+import com.zngk.dao.RlsbDao;
+import com.zngk.dto.RlsbBkDTO;
+import com.zngk.dto.SpDTO;
+import com.zngk.entity.PictureVo;
+import com.zngk.entity.User;
+import com.zngk.service.BkspService;
+import com.zngk.service.FlowService;
+import com.zngk.service.RlsbService;
+import com.zngk.util.PubMethod;
+
+@Service
+@Transactional
+public class RlsbServiceImpl implements RlsbService {
+	@Value("${repository_id}")
+	private String repository_id;
+	@Value("${action}")
+	private String action;
+	@Value("${fileUrl}")
+	private String fileUrl;
+	
+	private final static String BKLX = "4"; // 人脸布控
+	@Autowired
+	private RlsbDao rlsbDao;
+	@Autowired
+	private SendPictureData sendPictureData;
+	
+	
+	@Autowired
+	private FlowService flowService;
+	
+	@Autowired
+	private BkspService bkspService;
+	public void saveRlsb(HttpSession httpSession,RlsbBkDTO rlsbBkDTO, User userinfo) throws Exception {
+		String bkyy = rlsbBkDTO.getBkyy();
+		String dxlx = rlsbBkDTO.getDxlx();
+		String startTime = rlsbBkDTO.getStartTime();
+		String endTime = rlsbBkDTO.getEndTime();
+		CommonsMultipartFile file = rlsbBkDTO.getFile();
+		String gender = rlsbBkDTO.getGender();
+		int jkFlag = rlsbBkDTO.getJkFlag();
+		String phone = rlsbBkDTO.getPhone();
+		String sfzh = rlsbBkDTO.getSfzh();
+		String xm = rlsbBkDTO.getXm();
+		String zkno = PubMethod.getUUID("zkno_");
+		//如果不存在,创建文件夹
+		File dir = new File(fileUrl);
+		if(!dir.exists()){
+			dir.mkdirs();
+		}
+		String url = fileUrl+zkno+".jpg";
+		file.transferTo(new File(url));
+		
+		// 当前用户信息
+//		User userinfo = (User) httpSession.getAttribute("userinfo");
+		String sqrjh = userinfo.getAccount();// 申请人警号
+		String sqrxm = userinfo.getName();// 申请人姓名
+		String sqrdwdm = userinfo.getDepartmentCode();// 申请人单位代码
+		String sqrdwmc = userinfo.getDepartmentName();// 申请人单位名称
+		String userSfzh = userinfo.getYhsfzh();// 申请人身份证号
+		String drczno = PubMethod.getUUID("drczno_");
+
+		// ***接收人信息，如果不填默认为当前用户
+	
+		// 接收人警号
+		String jsrjh = jsrjh = userinfo.getAccount();
+		// 接收人姓名
+		String jsrxm = userinfo.getName();
+		// 接收人手机
+		String jsrsjh = userinfo.getSj();
+		
+		String stateRyxxb = "0";// 审批状态
+		// 薛兰 2017-09-04 如果当前用户是管理员，则状态为1（代表无需审批）
+		if (!userinfo.getRoleList().contains("PTYH")) {
+			stateRyxxb = "1";// 审批状态
+		}
+		
+		String sql1 = "insert into T_ZK_RYXXB (zkno,ryxm,Rysfzh,sqrjh,sqrxm,sqrdwdm,sqrdwmc,Ryzkkssj,Ryzkjssj,czsj,state,bkyy,rylx,bklx,rysjh,JKFLAG)"
+				+ "values('" + zkno + "','" + xm + "','" + sfzh + "','" + sqrjh + "','" + sqrxm + "','" + sqrdwdm
+				+ "','" + sqrdwmc + "','" + startTime + "','" + endTime + "',sysdate,'" + stateRyxxb + "','" + bkyy
+				+ "','" + dxlx + "','" + BKLX + "','" + phone + "', '"+jkFlag+"')";
+		// 1 保存布控人员信息
+		String sql2 = "insert into T_ZK_RYXX (RYNO,RYXM,RYSFZH,DRCZNO,DRCZJH,DRCZR,DRCZSJ,DRCZDWDM,ZKNO) " + "values ('"
+				+ zkno + "','" + xm + "','" + sfzh + "','" + drczno + "','" + jsrjh + "','" + sqrxm + "',sysdate,'"
+				+ sqrdwdm + "','" + zkno + "')";
+		// 2
+		// 保存人员基本信息params.get("zkno"),params.get("username"),params.get("usercard"),params.get("drczno"),params.get("jsrjh"),params.get("sqrxm"),params.get("sqrdwdm"),params.get("zkno")
+		String sql3 = " insert into T_RYJBXX (ZKNO,RYXM,RYSFZH) values ('" + zkno + "','" + sqrxm + "','" + userSfzh
+				+ "')";
+		// 3 保存信息接收人
+		// {params.get("jsrjh"),params.get("jsrxm"),params.get("jsrsj"),params.get("drczno")}
+		String sql4 = " insert into T_ZK_XXJSR select SEQ_T_ZK_XXJSR.Nextval,'" + jsrjh + "','" + jsrxm + "','" + jsrsjh
+				+ "',t.DRCZNO,t.ZKNO from T_ZK_RYXX t WHERE T.DRCZNO = '" + drczno + "' ";
+		
+		//保存照片
+		String sql5 = "insert into zk_rlsb_picturefile(zkno,url,xm,sfzh)values('"+zkno+"','"+url+"','"+xm+"','"+sfzh+"')";
+		
+		rlsbDao.saveRlsb(sql1,true);
+		rlsbDao.saveRlsb(sql2,false);
+		rlsbDao.saveRlsb(sql3,false);
+		rlsbDao.saveRlsb(sql4,false);
+		rlsbDao.saveRlsb(sql5,false);
+		
+		//4 布控即预制出所有审批流转信息(布控人=审批级别1  1审=审批级别2  2审=审批级别3)
+		String currFlowId = flowService.createFlowByUser(userinfo, zkno);
+		
+		//5 存审批表待审批(申请人即是当前流转的布控申请人)
+		SpDTO spDTO = new SpDTO();
+		spDTO.setSpno(zkno);
+		Integer spzt = 1;//待审批
+		//TODO 检查是否有spjb<0的
+		if(userinfo.getSpjb() == 3) {
+			spzt = 0;
+		}
+		spDTO.setSpzt(spzt);
+		spDTO.setSqsm(bkyy);
+		spDTO.setSprxm(sqrxm);
+		spDTO.setSprjh(sqrjh);
+		spDTO.setSprdwmc(sqrdwmc);
+		spDTO.setSpdx(4);//审批对象 0，所有控；1、控人、2、控手机  3、控车 4、控人脸
+		spDTO.setSpdxbh(url);//照片url
+		spDTO.setSpFlowId(currFlowId);
+		spDTO.setRyzkjssj(endTime);
+		bkspService.saveSp(httpSession, userinfo, spDTO);//布控时调用，记得推送数据在终审布控和终审审批做
+		
+		
+		if(userinfo.getSpjb() == 3) {
+			PictureVo pictureVo = new PictureVo();
+			//接口字段说明
+			pictureVo.setAction(action);
+			// 性别
+			if(gender==null||"".equals(gender)){
+				//如果没传值,则为未知
+				gender = "0";
+			}
+			pictureVo.setGender(Integer.parseInt(gender));
+			pictureVo.setName(xm);
+			pictureVo.setPersion_id(sfzh);
+			//人脸库id（48@DEFAULT 测试库） 正式库 231@DEFAULT
+			pictureVo.setRepository_id(repository_id);
+			pictureVo.setPicture_base64(url);
+			sendPictureData.sendPicture(pictureVo,zkno);
+			String sql ="update zk_rlsb_picturefile set state ='1' where zkno = '"+zkno+"'";
+			// 更改人脸识别布控照片附件表  将状态改为已推送
+			rlsbDao.updateState(sql,zkno);
+		}
+	}
+
+}

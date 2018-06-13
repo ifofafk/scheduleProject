@@ -1,0 +1,199 @@
+package com.zngk.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.common.InsertDataToFhUtils;
+import com.zngk.dao.BkspDao;
+import com.zngk.dto.BkListQueryDTO;
+import com.zngk.dto.SpDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.BkspService;
+@Service
+@Transactional
+public class BkspServiceImpl implements BkspService{
+	@Autowired
+	private BkspDao bkspDao;
+	
+	@Autowired
+	private InsertDataToFhUtils insertDataToFhUtils;
+	
+	
+	/**
+     * 查询自已待审批智控名单
+     *
+     * @return
+     */
+    public UserCenterPage getBuKongList(BkListQueryDTO data, User user, Integer page, Integer pageSize){
+        UserCenterPage userCenterPage = bkspDao.getMeRequestZkData(data, user, page, pageSize);
+        return userCenterPage;
+    }
+    
+ 
+ 	@Override
+ 	public String singleShenPi(HttpSession httpSession, User user, String zkno, String zkState, String spyy, String flowId) throws Exception {
+ 		
+ 		Map<String, Object> ryxxb = bkspDao.queryByZkno(zkno);// 查询t_zk_ryxxb出来
+ 		
+ 		// 取出布控类型
+ 		String spdx = ryxxb.get("bklx")!= null? ryxxb.get("bklx").toString() : "1";//默认都给身份证布控   1、控人  2wifi 3车 4脸
+ 		String spdxbh = ryxxb.get("rysfzh") != null? ryxxb.get("rysfzh").toString() : null;//默认身份证
+ 		if("2".equals(spdx)){
+ 			spdxbh = ryxxb.get("mac") != null? ryxxb.get("mac").toString() : spdxbh;
+ 		}else if("3".equals(spdx)){
+ 			spdxbh = ryxxb.get("cph") != null? ryxxb.get("cph").toString() : spdxbh;
+ 		// TODO 人脸存什么？
+ 		}else if("4".equals(spdx)) {
+// 			spdxbh = ryxxb.get("cph") != null? ryxxb.get("cph").toString() : spdxbh;
+ 		}
+ 		
+ 		// 审批人的信息
+ 		String sprxm = user.getName();
+ 		String sprjh = user.getAccount();
+ 		String sprdwmc = user.getDepartmentName();
+ 		
+ 		// 智控结束时间
+ 		String ryzkjssj = ryxxb.get("ryzkjssj")!= null? ryxxb.get("ryzkjssj").toString() : "";
+ 		
+ 		String spzt = "1";// 待审批
+ 		if("4".equals(zkState)){
+ 			spzt = "2";//驳回
+ 		}
+ 		
+ 		Integer spjb = user.getSpjb();
+ 		
+ 		// 二审
+ 		if(spjb == 3){
+ 			if("1".equals(zkState)) {
+ 				spzt = "0";//通过
+ 			}
+ 		
+			//布控表里更新状态(通过1   不通过4)
+ 			bkspDao.singleShenPi(httpSession, zkno, zkState, spjb);
+ 			
+ 			// 更新审批表
+ 			String spbSql = " update T_ZK_SPB set spdx='" + spdx + "',spdxbh='" + spdxbh + "',spzt='" + spzt + "',sjspr='" + sprxm + "',sjsprjh='" + sprjh + "',sjspdwmc='" + sprdwmc 
+ 					+ "',sjspsj=sysdate,zkjzrq='" + ryzkjssj + "',sjspyj='" +spyy+ "' where spno='"+zkno+"'";
+ 			
+ 			bkspDao.insertSPBLog(spbSql);// 切记日志表里的spno即是zkno，不然无法获取正确的当前用户辖内待审批
+
+ 	 		
+ 	 		//2终审 + 0审批通过时 才对外发布数据!!!!  往烽火库插入数据，往绿什么云发送,安保
+ 			//----------测试阶段先屏蔽掉----------------//
+ 	 		if("0".equals(spzt)) {
+ 	 			insertDataToFhUtils.insertFhzzSp(user,zkno);
+ 	 			
+ 	 			//TODO  熊铸  人脸需要做的终审通过后额外操作
+ 	 			if("4".equals(spdx)){
+ 	 				
+ 	 			}
+ 	 			// 如果布控类型 为2 2表示WiFi布控,则往WiFi中间表里插入数据(安保库)
+ 	 			if("2".equals(spdx)){
+ 	 				bkspDao.saveWifi(zkno);
+ 	 			}
+ 	 		}
+ 	 		
+ 		// 一审
+ 		}else{
+ 			//布控表里更新状态
+ 			bkspDao.singleShenPi(httpSession, zkno, zkState, spjb);
+ 			List roleList = user.getRoleList();
+ 			
+ 			String spbSql = "";
+ 			//创建审批表里派出所或市局更新
+ 			if(roleList != null && roleList.contains("PCSGLY")) {
+ 				// 创建审批表
+ 	 			spbSql = " update T_ZK_SPB set spdx='" + spdx + "',spdxbh='" + spdxbh + "',spzt='" + spzt + "',pcsspr='" + sprxm + "',pcssprjh='" + sprjh + "',pcsspdwmc='" + sprdwmc 
+ 	 					+ "',pcsspsj=sysdate,zkjzrq='" + ryzkjssj + "',pcsspyj='" +spyy+ "' where spno='"+zkno+"'";
+ 	 			
+ 			}else if(roleList != null && roleList.contains("FJGLY")) {
+ 				// 创建审批表
+ 	 			spbSql = " update T_ZK_SPB set spdx='" + spdx + "',spdxbh='" + spdxbh + "',spzt='" + spzt + "',fjspr='" + sprxm + "',fjsprjh='" + sprjh + "',fjspdwmc='" + sprdwmc 
+ 	 					+ "',fjspsj=sysdate,zkjzrq='" + ryzkjssj + "',fjspyj='" +spyy+ "' where spno='"+zkno+"'";
+ 	 			
+ 			}
+ 			bkspDao.insertSPBLog(spbSql);// 切记日志表里的spno即是zkno，不然无法获取正确的当前用户辖内待审批
+ 		}
+ 		
+ 		return zkno;
+ 	}
+ 	
+ // 布控续控的操作
+ 	@Override
+ 	public ResultGson upControl(HttpSession httpSession,String zkno,String xkyy,String xksj ) {
+ 	
+ 		return bkspDao.upControl(httpSession, zkno,xkyy,xksj);
+ 	}
+
+ 	// 布控撤控的操作
+ 	@Override
+ 	public ResultGson downControl(HttpSession httpSession,String zkno,String ckyy,String cksj) {
+ 		return bkspDao.downControl(httpSession, zkno, ckyy, cksj);
+ 	}
+
+
+ 	
+	@Override
+	public String saveSp(HttpSession httpSession, User user, SpDTO spDTO) {
+		
+ 		Integer spjb = user.getSpjb();
+ 		String spbSql = null;
+ 		// 二审
+ 		if(spjb == 3){
+ 			// 创建审批表
+ 			spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,sjspr,sjsprjh,sjspdwmc,sjspsj,zkjzrq,sjspyj) values "
+ 					+ "('" + spDTO.getSpno() + "', '" + spDTO.getSpdx() + "', '" + spDTO.getSpdxbh() + "', '" + spDTO.getSpzt() + "', '" + spDTO.getSprxm() + "', '" + spDTO.getSprjh()
+ 					+ "', '" + spDTO.getSprdwmc() + "', to_char(sysdate,'yyyy/MM/dd hh24:mi:ss'), '" + spDTO.getRyzkjssj() + "', '" +spDTO.getSqsm() + "')";
+ 	 		
+ 		// 一审
+ 		}else if(spjb == 2){
+
+ 			List roleList = user.getRoleList();
+ 			
+ 			//创建审批表里派出所或市局更新
+ 			if(roleList != null && roleList.contains("PCSGLY")) {
+ 				// 创建审批表
+ 	 			spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,pcsspr,pcssprjh,pcsspdwmc,pcsspsj,zkjzrq,pcsspyj) values "
+ 	 					+ "('" + spDTO.getSpno() + "', '" + spDTO.getSpdx() + "', '" + spDTO.getSpdxbh() + "', '" + spDTO.getSpzt() + "', '" + spDTO.getSprxm() + "', '" + spDTO.getSprjh()
+ 	 					+ "', '" + spDTO.getSprdwmc() + "', to_char(sysdate,'yyyy/MM/dd hh24:mi:ss'), '" + spDTO.getRyzkjssj() + "', '" +spDTO.getSqsm() + "')";
+ 				
+ 			}else if(roleList != null && roleList.contains("FJGLY")) {
+ 				// 创建审批表
+ 	 			spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,fjspr,fjsprjh,fjspdwmc,fjspsj,zkjzrq,fjspyj) values "
+ 	 					+ "('" + spDTO.getSpno() + "', '" + spDTO.getSpdx() + "', '" + spDTO.getSpdxbh() + "', '" + spDTO.getSpzt() + "', '" + spDTO.getSprxm() + "', '" + spDTO.getSprjh()
+ 	 					+ "', '" + spDTO.getSprdwmc() + "', to_char(sysdate,'yyyy/MM/dd hh24:mi:ss'), '" + spDTO.getRyzkjssj() + "', '" +spDTO.getSqsm() + "')";
+ 			
+ 	 		//市局普通用户布控
+ 			}else if(roleList != null && roleList.contains("PTYH")){
+ 				spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,zkjzrq) values ('" + spDTO.getSpno() + "', '" + spDTO.getSpdx() + "', '" + spDTO.getSpdxbh() + "', '" + spDTO.getSpzt()
+ 	 					+ "', '"  + spDTO.getRyzkjssj() + "')";
+ 			}
+		
+		//普通用户
+ 		}else{
+ 			spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,zkjzrq) values ('" + spDTO.getSpno() + "', '" + spDTO.getSpdx() + "', '" + spDTO.getSpdxbh() + "', '" + spDTO.getSpzt()
+				+ "', '"  + spDTO.getRyzkjssj() + "')";
+ 		}
+ 		bkspDao.insertSPBLog(spbSql);// 切记日志表里的spno即是zkno，不然无法获取正确的当前用户辖内待审批
+ 		
+ 		return spDTO.getSpno();
+	}
+
+
+	@Override
+	public List<Map<String, Object>> queryFlowListByZkno(String objectId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+ 	
+ 	
+ 	
+}

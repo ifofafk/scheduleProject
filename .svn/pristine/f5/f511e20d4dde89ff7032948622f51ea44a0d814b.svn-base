@@ -1,0 +1,54 @@
+package com.zngk.entity;
+
+public class DataType {
+	
+	public DataType(String errormsg,String id,String name,String succses){
+		this.errormsg = errormsg;
+		this.id = id;
+		this.name = name;
+		this.succses = succses;
+	}
+	public DataType(){
+		
+	}
+	private String succses;
+	
+	private String errormsg;
+	
+	private String name;
+	
+	private String id;
+
+	public String getSuccses() {
+		return succses;
+	}
+
+	public void setSuccses(String succses) {
+		this.succses = succses;
+	}
+
+	public String getErrormsg() {
+		return errormsg;
+	}
+
+	public void setErrormsg(String errormsg) {
+		this.errormsg = errormsg;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+}

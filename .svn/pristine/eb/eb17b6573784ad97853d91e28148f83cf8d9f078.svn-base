@@ -1,0 +1,46 @@
+package com.zngk.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+
+public interface WallService {
+
+
+	/**
+	 * 统计数字   旧wall
+	 * @author WangChen
+	 * @return
+	 */
+	public Map<String,Object> getNums();
+	
+	
+	
+	//***新wall***
+	
+	//1. 各分局布控人数排名  
+	public List<Map<String, Object>> getNumOne();
+	
+	//2. 数据资源，按type区分：1.上网  2.国内旅客(旅店) 3.铁路  4.民航订座  5.民航进港  6.长途客车  7.wifi 8.车辆卡口
+	public List<Map<String, Object>> getNumTwo();
+	
+	//3  布控人员分类
+	public List<Map<String, Object>> getNumThree();
+	
+	//4  布控人员轨迹
+	public Map<String, Object> getNumFour(String startTime, String endTime);
+	
+	//5 布控结果分析
+	public List<Map<String, Object>> getNumFive();
+	
+	//6  最近活动的被预警人员
+	public UserCenterPage getNumSix(Integer pageNum, Integer pageSize);
+	
+	//用户布控情况统计
+	Map<String,Object> getBkTj(String yhm);
+	
+	//根据用户权限分出来的单位部门查看部门布控情况统计
+	Map<String,Object> getDeptBkTj(User user,String dwdm, String role);
+}

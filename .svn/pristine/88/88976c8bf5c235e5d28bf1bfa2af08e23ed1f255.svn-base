@@ -1,0 +1,253 @@
+package com.zngk.util;
+
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.usermodel.Cell;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+public class PubMethod {
+
+	/**
+	 * 获取uuid不含-
+	 * 
+	 * @return
+	 */
+	public static String getUUID() {
+		return UUID.randomUUID().toString().replace("-", "").toUpperCase();
+	}
+
+	/**
+	 * 带前缀的uuid(不含-)
+	 * 
+	 * @param prefix
+	 * @return
+	 */
+	public static String getUUID(String prefix) {
+		return prefix + getUUID();
+	}
+
+	/**
+	 * 根据请求获取ip
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public static String getCallerIpMe(HttpServletRequest request) {
+		String ip = null;
+		if (request != null) {
+			ip = request.getHeader("x-forwarded-for");
+			if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+				ip = request.getHeader("Proxy-Client-IP");
+			}
+			if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+				ip = request.getHeader("WL-Proxy-Client-IP");
+			}
+			if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+				ip = request.getRemoteAddr();
+			}
+		}
+		return ip;
+	}
+
+	/**
+	 * 获取14个区的区名
+	 * 
+	 * @param key
+	 *            6位区号前缀
+	 * @return
+	 */
+	public static Object getDistrict(String key) {
+		Map<String, String[]> districts = new HashMap<String, String[]>();
+
+		districts.put("420102", new String[] { "武汉市公安局江岸区分局", "江岸分局" });
+		districts.put("420103", new String[] { "武汉市公安局江汉区分局", "江汉分局" });
+		districts.put("420104", new String[] { "武汉市公安局硚口区分局", "硚口分局" });
+		districts.put("420105", new String[] { "武汉市公安局汉阳区分局", "汉阳分局" });
+		districts.put("420106", new String[] { "武汉市公安局武昌区分局", "武昌分局" });
+		districts.put("420107", new String[] { "武汉市公安局青山区分局", "青山分局" });
+		districts.put("420111", new String[] { "武汉市公安局洪山区分局", "洪山分局" });
+		districts.put("420112", new String[] { "武汉市公安局东西湖区分局", "东西湖分局" });
+		districts.put("420115", new String[] { "武汉市公安局江夏区分局", "江夏分局" });
+		districts.put("420116", new String[] { "武汉市公安局黄陂区分局", "黄陂分局" });
+		districts.put("420117", new String[] { "武汉市公安局新洲区分局", "新洲分局" });
+		districts.put("420184", new String[] { "武汉经济技术开发区分局", "经开分局" });
+		districts.put("420185", new String[] { "东湖新技术开发区分局", "东湖分局" });
+		districts.put("420114", new String[] { "武汉市公安局蔡甸分局", "蔡甸分局" });
+		districts.put("420100000000", new String[] { "武汉市公安局", "市局" });
+		if (StringUtils.isBlank(key)) {
+			return districts;
+		}
+		return districts.get(key);
+	}
+
+	/**
+	 * 根据14个区来组合数据，给统计加上区局名
+	 * 
+	 * @param resource
+	 *            必须包含dwdm字段
+	 * @return
+	 */
+	public static List<Map<String, Object>> addDistrictName(List<Map<String, Object>> resource) {
+		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+		Map<String, Object> resutlData = null;
+		@SuppressWarnings("unchecked")
+		// 14个分局
+		Map<String, Object> data = (Map<String, Object>) PubMethod.getDistrict(null);
+
+		for (Map.Entry<String, Object> e : data.entrySet()) {
+			String num = "0";// 数量
+			resutlData = new HashMap<String, Object>();
+			resutlData.put("dwmc", ((String[]) e.getValue())[1]);// 单位名称
+			resutlData.put("num", num);// 数量
+			for (int i = 0; i < resource.size(); i++) {
+				// 如果不为空，且包含这个区的前6位，即存入结果集
+				if (resource.get(i).get("dwdm").toString().contains(e.getKey().toString())) {
+					resutlData.put("num", resource.get(i).get("num"));
+				}
+			}
+			result.add(resutlData);
+		}
+		return result;
+	}
+
+	public static final String SjjgdmStr = "00000000";// 市局
+	public static final String FjjgdmStr = "000000";// 分局
+	public static final String PcsjgdmStr = "0000";// 派出所
+
+	/**
+	 * 获取用户身份
+	 * 
+	 * @param jgdm
+	 *            机构代码
+	 * @return
+	 */
+	public static String getYhsf(String jgdm) {
+		String yhsf = "PTYH";// 默认为普通用户
+		if (StringUtils.isNotBlank(jgdm)) {
+			if (jgdm.indexOf(SjjgdmStr) >= 0) {
+				yhsf = "SJGLY";
+			}
+			if (jgdm.indexOf(FjjgdmStr) >= 0 && jgdm.indexOf(SjjgdmStr) < 0 && jgdm.indexOf(PcsjgdmStr) < 0) {
+				yhsf = "FJGLY";
+			}
+			if (jgdm.indexOf(PcsjgdmStr) >= 0 && jgdm.indexOf(SjjgdmStr) < 0 && jgdm.indexOf(FjjgdmStr) < 0) {
+				yhsf = "PCSGLY";
+			}
+		}
+		return yhsf;
+	}
+
+	/**
+	 * 获取布控名称
+	 * 
+	 * @param type
+	 *            类别
+	 * @return
+	 */
+	public static String getBkmc(int type) {
+		String result = "";
+		// 1.上网 2.旅馆 3.铁路 4.民航订座 5.民航进港 6.长途客车 7.WIFI嗅探 8.车辆卡口
+		switch (type) {
+		case 1:
+			result = "网吧";
+			break;
+		case 2:
+			result = "旅店";
+			break;
+		case 3:
+			result = "铁路";
+			break;
+		case 4:
+			result = "民航订座";
+			break;
+		case 5:
+			result = "民航进港";
+			break;
+		case 6:
+			result = "长途车";
+			break;
+		case 7:
+			result = "WIFI嗅探";
+			break;
+		case 8:
+			result = "车辆卡口";
+			break;
+		default:
+			result = null;
+			break;
+		}
+		return result;
+	}
+
+	/**
+	 * poi解析excel单元格 格式转换
+	 * @param c 单元格
+	 * @return
+	 */
+	public static  String getCellDataToString(Cell c) {
+		String s = null;
+		if (c != null) {
+			switch (c.getCellType()) {
+			// 空
+			case Cell.CELL_TYPE_BLANK:
+				s = null;
+				break;
+			// 布尔类型
+			case Cell.CELL_TYPE_BOOLEAN:
+				s = String.valueOf(c.getBooleanCellValue());
+				break;
+			case Cell.CELL_TYPE_ERROR:
+				s = String.valueOf(c.getErrorCellValue());
+				break;
+			case Cell.CELL_TYPE_FORMULA:
+				s = null;
+				break;
+			case Cell.CELL_TYPE_NUMERIC:// 数字
+				// 3.只能应对2015/02/01 2015-02-01 2015.01.2格式,且返回的是对应的，如/则/ -则- .则.
+				// if(HSSFDateUtil.isCellDateFormatted(c)){
+				// s = transferInvalidDateFormat(c);
+				// }else{
+				// s = new DecimalFormat("0").format(c.getNumericCellValue());
+				// //只取整数
+				// }
+
+				// 2.只能应对2015/02/01 2015-02-01 2015.01.2格式,且返回的是对应的，如/则/ -则- .则.
+				// 如果为时间格式20150201那种##### bug：日期的年份显示错误(显示成5位数)
+				if (HSSFDateUtil.isCellDateFormatted(c)) {
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+					s = sdf.format(HSSFDateUtil.getJavaDate(c.getNumericCellValue())).toString();
+				} else {
+					s = new DecimalFormat("0").format(c.getNumericCellValue()); // 只取整数
+				}
+				break;
+			case Cell.CELL_TYPE_STRING:
+				s = String.valueOf(c.getStringCellValue());
+				break;
+			}
+		}
+		return s;
+	}
+
+	
+	/**
+	 * 获取session
+	 * @return
+	 */
+	public static HttpSession getSession(){
+		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+				.getRequest();
+		return request.getSession();
+	}
+}

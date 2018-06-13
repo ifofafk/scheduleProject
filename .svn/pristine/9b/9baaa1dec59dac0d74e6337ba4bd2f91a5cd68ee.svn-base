@@ -1,0 +1,48 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+public class PersonInfodto implements Serializable{
+	
+	/**	人员注册信息dto
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String jh;//警号
+	private String yhxm;//用户姓名
+	private String sfzh;//身份证号
+	private String szdwdm;//所在单位
+	private String power;//用户权限
+	public String getJh() {
+		return jh;
+	}
+	public void setJh(String jh) {
+		this.jh = jh;
+	}
+	public String getYhxm() {
+		return yhxm;
+	}
+	public void setYhxm(String yhxm) {
+		this.yhxm = yhxm;
+	}
+	public String getSfzh() {
+		return sfzh;
+	}
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+	public String getSzdwdm() {
+		return szdwdm;
+	}
+	public void setSzdwdm(String szdwdm) {
+		this.szdwdm = szdwdm;
+	}
+	public String getPower() {
+		return power;
+	}
+	public void setPower(String power) {
+		this.power = power;
+	}
+	
+
+}

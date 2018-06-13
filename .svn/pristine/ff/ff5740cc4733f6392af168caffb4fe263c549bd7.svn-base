@@ -1,0 +1,355 @@
+package com.zngk.service.impl;
+
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.zngk.dao.PersonPmDao;
+import com.zngk.entity.PublicData;
+import com.zngk.entity.User;
+import com.zngk.entity.UserCenterPage;
+import com.zngk.service.PersonPmService;
+
+@Service
+@Transactional
+public class PersonPmServiceImpl implements PersonPmService {
+
+	@Autowired
+	private PersonPmDao personPmDao;
+
+	@Override
+	public void save(String sfzh, String userName, String jySfzh, String jh) {
+		personPmDao.save(sfzh, userName, jySfzh, jh);
+	}
+
+	@Override
+	@SuppressWarnings("rawtypes")
+	public List selectPerson(String sfzh) {
+		List list = personPmDao.selectPersons(sfzh);
+		return list;
+	}
+
+	// 获取接口返回的base64图片字符串
+	@Override
+	public String sfzh(String sfzh, String userName, String jySfzh, String jh) {
+
+		String imgStr = personPmDao.sfzh(sfzh, userName, jySfzh, jh);
+		return imgStr;
+	}
+
+	@Override
+	public void addObject(String sfzh) {
+
+	}
+
+	@Override
+	public void updateObject(String sfzh) {
+		personPmDao.updateObject(sfzh);
+	}
+
+	@Override
+	public void deleteObject(String sfzh) {
+		personPmDao.deleteObject(sfzh);
+	}
+
+	@Override
+	public void RequestIll(HttpServletRequest request, HttpSession httpSession) {
+		personPmDao.RequestIll(request, httpSession);
+	}
+
+	// 图片base64传递到controller
+	@Override
+	public String ImagetoController(String imgStr) {
+		String imgStrr = personPmDao.ImagetoController(imgStr);
+		return imgStrr;
+	}
+
+	// 单个布控的状态修改并记录日志
+	@Override
+	public int updateStateByZknoAndState(HttpSession httpSession, String zkno, String zkState, String spyj) {
+		int flag = 0;
+		// 修改状态
+		flag = personPmDao.updateStateByZknoAndState(zkno, zkState);
+
+		Map<String, Object> ryxxb = personPmDao.queryByZkno(zkno);// 查询t_zk_ryxxb出来
+		// 取出布控类型
+		String bklx = ryxxb.get("bklx")!= null? ryxxb.get("bklx").toString() : "";
+		// 如果布控类型 为2 2表示WiFi布控,则往WiFi中间表里插入数据
+		if("2".equals(bklx)){
+			
+			personPmDao.saveWifi(zkno);
+		}
+		flag = ryxxb != null ? 1 : 0;
+		// 记录日志
+
+		String spdx = "1";// 控人
+		String spdxbh = ryxxb.get("rysfzh").toString();/// 身份证号
+		String spzt = "0";// 审批通过  //同意
+		if("4".equals(zkState)){//不同意
+			spzt = "2";//驳回
+		}
+		//需要根据当前用户权限来判断spb的状态
+		String ryzkjssj = ryxxb.get("ryzkjssj").toString();// 智控结束时间
+
+		// 审批人的信息
+		User user = (User)httpSession.getAttribute("userinfo");
+		String sprxm = user.getName();
+		String sprjh = user.getAccount();
+		String sprdwmc = user.getDepartmentName();
+		// 判断市局 ，分局， 派出所. spb存死，不再判断3级划分
+		String spbSql = " insert into T_ZK_SPB (spno,spdx,spdxbh,spzt,pcsspr,pcssprjh,pcsspdwmc,pcsspsj,zkjzrq,pcsspyj) values "
+				+ "('" + zkno + "', '" + spdx + "', '" + spdxbh + "', '" + spzt + "', '" + sprxm + "', '" + sprjh
+				+ "', '" + sprdwmc + "', to_char(sysdate,'yyyy/MM/dd hh24:mi:ss'), '" + ryzkjssj + "', '" +spyj+ "')";
+		
+		personPmDao.insertSPBLog(spbSql);// 切记日志表里的spno即是zkno，不然无法获取正确的当前用户辖内待审批
+
+		flag = 1;
+		return flag;
+	}
+
+	// 布控结果的详细信息
+	@SuppressWarnings("rawtypes")
+	@Override
+	public List selectContent(HttpServletRequest request, HttpSession httpSession) {
+		List list = personPmDao.selectContent(httpSession, request);
+		return list;
+	}
+	// 布控结果条件查询的接口
+	/*
+	 * UserCenterPage searchResult(HttpSession httpSession, HttpServletRequest
+	 * request, Integer page, Integer pageSize) { UserCenterPage
+	 * userCenterPage=personPmDao.searchResult(httpSession, request, page,
+	 * pageSize); return userCenterPage; }
+	 */
+
+	// 布控结果的条件查询
+	@SuppressWarnings("rawtypes")
+	@Override
+	public void searchResult(HttpSession httpSession, HttpServletRequest request) {
+		String sql = " select t.YJXXBH, t.YJJSDW, t.FBRXM,t.FBRJH, t.FBDW,t.ZDRYXM,t.SFZH, t.HDFSDDSSSHCS,t.YKMC,t.YJFBSJ, ry.bkyy, "
+				+ " substr(t.hdfssj,0,4)||'-'||substr(t.hdfssj,5,2)||'-'||substr(t.hdfssj,7,2)||' '||substr(t.hdfssj,9,2)||':'||substr(t.hdfssj,11,2)||':'||substr(t.hdfssj,13,2) as HDFSSJ, "
+				+ " t.HDXGXX,t.UPDATETIME from T_ZKGJB t inner join  T_ZK_RYXXB ry on t.sfzh=ry.rysfzh where 1=1 ";
+
+		
+		//判断当前用户查看权限
+		User user = (User) httpSession.getAttribute("userinfo");
+		// 判断是否是市局单位的用户
+		String dwdm = user.getDepartmentCode();
+		List roleList = user.getRoleList();
+		//刚好是管理员角色，可查看他部门所有.  sjgly可以看所有部门
+		if(StringUtils.isNotBlank(dwdm)){
+			if((roleList.contains("FJGLY") || roleList.contains("PCSGLY")) && !roleList.contains("SJSGLY")) {
+				sql = " select t.YJXXBH, t.YJJSDW, t.FBRXM,t.FBRJH, t.FBDW,t.ZDRYXM,t.SFZH, t.HDFSDDSSSHCS,t.YKMC,t.YJFBSJ, ry.bkyy, "
+						+ " substr(t.hdfssj,0,4)||'-'||substr(t.hdfssj,5,2)||'-'||substr(t.hdfssj,7,2)||' '||substr(t.hdfssj,9,2)||':'||substr(t.hdfssj,11,2)||':'||substr(t.hdfssj,13,2) as HDFSSJ, "
+						+ " t.HDXGXX,t.UPDATETIME from T_ZKGJB t inner join  T_ZK_RYXXB ry on t.sfzh=ry.rysfzh  where t.fbdwjgdm='" +dwdm+ "' ";
+			}
+		}
+		//不是管理员只能看他自己的
+		if(!roleList.contains("FJGLY") && !roleList.contains("PCSGLY") && !roleList.contains("SJGLY") && StringUtils.isNotBlank(user.getAccount())){
+			sql = " select t.YJXXBH, t.YJJSDW, t.FBRXM,t.FBRJH, t.FBDW,t.ZDRYXM,t.SFZH, t.HDFSDDSSSHCS,t.YKMC,t.YJFBSJ, ry.bkyy, "
+				+ " substr(t.hdfssj,0,4)||'-'||substr(t.hdfssj,5,2)||'-'||substr(t.hdfssj,7,2)||' '||substr(t.hdfssj,9,2)||':'||substr(t.hdfssj,11,2)||':'||substr(t.hdfssj,13,2) as HDFSSJ, "
+				+ " t.HDXGXX,t.UPDATETIME from T_ZKGJB t inner join  T_ZK_RYXXB ry on t.sfzh=ry.rysfzh where t.fbrjh='" + user.getAccount() + "' ";
+		}
+		
+		//
+		
+		
+		String fbrxm = null;// 发布人姓名
+		String bkyy = null;//布控原因
+		String startTime = null;//活动发生起点时间
+		String endTime = null;//活动发生终点时间
+		String bkrxm = null;//布控人姓名
+		String sfzh = null;// 身份证号
+		String hdlx = null;// 活动类型
+		List<Object> argList = new ArrayList<Object>();
+		if(StringUtils.isNotBlank(request.getParameter("fbrxm"))) {
+			fbrxm = request.getParameter("fbrxm").trim();
+			sql = sql + " and t.FBRXM like '%'||?||'%' ";
+			argList.add(fbrxm);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("bkyy"))) {
+			bkyy = request.getParameter("bkyy").trim();
+			sql = sql + " and ry.bkyy like '%'||?||'%' ";
+			argList.add(bkyy);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("startTime"))) {
+			startTime = request.getParameter("startTime").trim();
+			request.setAttribute("startTime", startTime);
+			
+			String startTimeTemp = startTime.replace("-", "");
+			
+			sql = sql + " and substr(t.hdfssj,0,8)>=? ";
+			argList.add(startTimeTemp);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("endTime"))) {
+			endTime = request.getParameter("endTime").trim();
+			request.setAttribute("endTime", endTime);
+			
+			String endTimeTemp = endTime.replace("-", "");
+			sql = sql + " and substr(t.hdfssj,0,8)<=? ";
+			argList.add(endTimeTemp);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("bkrxm"))) {
+			bkrxm = request.getParameter("bkrxm").trim();
+			sql = sql + " and t.ZDRYXM like '%'||?||'%' ";
+			argList.add(bkrxm);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("sfzh"))) {
+			sfzh = request.getParameter("sfzh").trim();
+			sql = sql + " and t.SFZH like '%'||?||'%' ";
+			argList.add(sfzh);
+		}
+		if(StringUtils.isNotBlank(request.getParameter("hdlx"))) {
+			hdlx = request.getParameter("hdlx").trim();
+			sql = sql + " and t.YKMC like '%'||?||'%' ";
+			argList.add(hdlx);
+		}
+		sql = sql + " order by t.UPDATETIME desc,t.YJXXBH desc"; 
+		
+		Object[] args = null;
+		int[] argTypes = null;
+		if(!argList.isEmpty()) {
+			args = argList.toArray();
+			switch (argList.size()) {
+				case 1:
+					argTypes = new int[]{Types.VARCHAR};
+					break;
+				case 2:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR};
+					break;
+				case 3:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+					break;
+				case 4:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+					break;
+				case 5:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+					break;
+				case 6:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+					break;
+				case 7:
+					argTypes = new int[]{Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+					break;
+				default:
+					break;
+			}
+		}
+		
+		// String jh=request.getParameter("jh");//警号
+		// if(null!=jh){
+		// jh = jh.trim();
+		// }
+		
+		request.setAttribute("fbrxm", fbrxm);
+		request.setAttribute("startTime", startTime);
+		request.setAttribute("endTime", endTime);
+//		// request.setAttribute("jh", jh);
+		request.setAttribute("bkyy", bkyy);
+		request.setAttribute("bkrxm", bkrxm);
+		request.setAttribute("sfzh", sfzh);
+		request.setAttribute("hdlx", hdlx);
+		
+		UserCenterPage userCenterPage = personPmDao.controlList(httpSession, request, sql, args, argTypes);
+		request.setAttribute("userCenterPage1", userCenterPage);
+		request.setAttribute("getMeList", userCenterPage.getMapList());
+	}
+
+	// 布控续控的操作
+	@Override
+	public PublicData upControl(HttpSession httpSession,String zkno,String xkyy,String xksj ) {
+		return personPmDao.upControl(httpSession, zkno,xkyy,xksj);
+	}
+
+	// 布控撤控的操作
+	@Override
+	public PublicData downControl(HttpSession httpSession,String zkno,String ckyy,String cksj) {
+		return personPmDao.downControl(httpSession, zkno, ckyy, cksj);
+	}
+
+
+	@Override
+	public void shenPiWifi(HttpSession httpSession, HttpServletRequest request) {
+		personPmDao.shenPiWifi( httpSession,  request);
+		
+	}
+	
+	/**		
+	 * 根据zkno查询布控人员信息
+	 * @param zkno   智控编号
+	 * @return
+	 */
+	@Override
+	public Map<String,Object> queryByZkno(String zkno) {
+		//将数值内容翻译成文字
+		Map<String,Object> map = personPmDao.queryByZkno(zkno);
+		if(map != null){
+			if(map.get("RYLX") != null && StringUtils.isNotBlank(map.get("RYLX").toString())) {
+				int RYLX = Integer.parseInt(map.get("RYLX").toString());
+				switch (RYLX) {
+					case 1:
+						map.put("RYLX", "失独");
+						break;
+					case 2:
+						map.put("RYLX", "支农返乡");
+						break;
+					case 3:
+						map.put("RYLX", "商品房建筑质量、延期交付问题");
+						break;
+					case 4:
+						map.put("RYLX", "涉军群体");
+						break;
+					case 5:
+						map.put("RYLX", "涉企业群体");
+						break;
+					case 6:
+						map.put("RYLX", "征地、拆迁群体");
+						break;
+					case 7:
+						map.put("RYLX", "出租车司机群体");
+						break;
+					case 8:
+						map.put("RYLX", "残疾人群体");
+						break;
+					case 9:
+						map.put("RYLX", "涉非法集资案集资户");
+						break;
+					case 10:
+						map.put("RYLX", "涉法涉诉");
+						break;
+					case 11:
+						map.put("RYLX", "民工讨薪问题");
+						break;
+					case 12:
+						map.put("RYLX", "缠访闹访");
+						break;
+					case 13:
+						map.put("RYLX", "涉教");
+						break;
+					case 14:
+						map.put("RYLX", "民族宗教群体");
+						break;
+					default:
+						map.put("RYLX", "其他");
+						break;
+				}
+			}
+//			if(map.get("zyfw") != null && StringUtils.isNotBlank(map.get("zyfw").toString())) {
+//				
+//			}
+		}
+		return map;
+	}
+	
+	
+}

@@ -1,0 +1,18 @@
+package com.zngk.common;
+public class ZkDataForm {
+    //智控id
+    private String Sfzh;
+
+	public String getSfzh() {
+		return Sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		Sfzh = sfzh;
+	}
+
+
+
+
+
+}

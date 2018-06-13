@@ -1,0 +1,44 @@
+package com.zngk.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+public interface LogonDao {
+	/**
+	 * 查询用户信息
+	 * @param name
+	 * @param passwrod
+	 * @return
+	 */
+	public Map<String, Object> booleanLongon(String name,String passwrod);
+	
+	/**
+	 * 查询用户角色
+	 * @param name
+	 * @return
+	 */
+	public List<String> serchUserRolse(String name);
+	
+	/**
+	 * 插入登录日志
+	 * @param logId   日志主键
+	 * @param yhxm    用户姓名
+	 * @param type    1、登录；0、退出
+	 * @param account 账号
+	 * @param ip      ip
+	 * @param host    主机
+	 * @param port    端口
+	 * @param remark  备注
+	 * @return
+	 */
+	public void insertLoginLog(String logId, String username, int type, String account, String ip, String host, String port, String remark);
+
+	/**
+	 * 根据警号查询用户信息
+	 * @param outterjh
+	 * @return
+	 */
+	public Map<String, Object> queryByJh(String outterjh);
+}

@@ -1,0 +1,154 @@
+package com.zngk.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.rybk.RybkEmun;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.WifiBkBatchSaveDTO;
+import com.zngk.dto.WifiBkDTO;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.ToLogonService;
+import com.zngk.service.WifiService;
+import com.zngk.util.PubMethod;
+
+/**
+ * update:薛兰
+ * 2017-08-31
+ * 添加wifi批量布控保存功能
+ */
+@Controller
+@RequestMapping(value="wifi")
+public class WifiController {
+	
+	
+	@Autowired
+	private WifiService wifiService;
+	
+	@Autowired
+	private ToLogonService tologonservies;
+	
+	/**
+	 * 单个WiFi布控
+	 * @param wifiBkDTO
+	 * @return
+	 */
+	@RequestMapping(value="saveWifi")
+	@ApiOperation(value="单个WiFi布控",httpMethod="PUT",notes="单个WiFi布控",response=ResultGson.class) 
+	@ResponseBody
+	public ResultGson saveWifi(@RequestBody WifiBkDTO wifiBkDTO,@RequestParam(value = "outterJh",required=false)String outterJh){
+		ResultGson result = ResultGson.ok();
+		
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User)httpSession.getAttribute("userinfo");
+		
+
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if(wifiBkDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+				
+		if(userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		try {
+			wifiService.saveWifi(httpSession, wifiBkDTO,userinfo);
+		} catch (Exception e) {
+			throw new ServiceException("false","执行出错");
+		}
+		
+		return result;
+	}
+	
+	/** 
+	 * 薛兰
+	 * 2017-8-31上午9:46:54
+	 * 批量WiFi布控
+	 * @param request
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value="batchUpdateWifi")
+	@ApiOperation(value="批量WiFi布控的保存",httpMethod="PUT",notes="批量WiFi布控的保存",response=ResultGson.class) 
+	@ResponseBody
+	public ResultGson batchUpdateWifi(@RequestBody WifiBkBatchSaveDTO wifiBkBatchSaveDTO,@RequestParam(value = "outterJh",required=false)String outterJh) throws Exception{
+		ResultGson result = ResultGson.ok();
+		
+		HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpSession httpSession = request.getSession();
+		User userinfo = (User)httpSession.getAttribute("userinfo");
+		
+		if(StringUtils.isBlank(wifiBkBatchSaveDTO.getDrczno()) || wifiBkBatchSaveDTO.getJkFlag() == null || !(wifiBkBatchSaveDTO.getSucessList() != null && !(wifiBkBatchSaveDTO.getSucessList().isEmpty())) ) {
+			throw new ServiceException(RybkEmun.PARAM_EMPTY.getCode(), RybkEmun.PARAM_EMPTY.getDesc());
+		}
+		
+		
+		//第三方调用接口，必须自带警号账号参数
+		if(StringUtils.isNotBlank(outterJh)) {
+			User userTemp = (User)httpSession.getAttribute("userinfo");
+			//如果当前session里有用户，且是该外部调用账号
+			if(userTemp != null) {
+				//如果当前用户session还在
+				if(outterJh.equals(userTemp.getAccount())) {
+					//如果是本人在使用，改成外部调用(前端登录时获取的isoutter==0)
+					if(userTemp.getIsOutter() == 0){
+						userTemp.setIsOutter(1);
+					}
+				}else{
+					tologonservies.jkLogin(request, httpSession, outterJh);
+				}
+			}else{
+				tologonservies.jkLogin(request, httpSession, outterJh);
+			}
+		}
+		//指定账号登录(开放页面调用)
+		if(wifiBkBatchSaveDTO.getJkFlag() == 1) {
+			tologonservies.jkLogin(request, httpSession, "000000");
+		}
+				
+		if(userinfo == null) {
+			throw new ServiceException(UserEmun.SESSION_EXPIRES.getCode(),UserEmun.SESSION_EXPIRES.getDesc());
+		}
+		
+		wifiService.batchUdpate(userinfo,PubMethod.getCallerIpMe(request),wifiBkBatchSaveDTO);
+		
+		return result;
+	}
+
+	
+	
+	
+	
+}

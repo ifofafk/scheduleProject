@@ -1,0 +1,111 @@
+package com.zngk.dto;
+
+import java.io.Serializable;
+
+/**
+ * @author WangChen
+ * @since ZNGK v2.0
+ * 布控结果信息列表查询条件
+ */
+public class BkResultListQueryDTO implements Serializable {
+
+	private static final long serialVersionUID = 1659770318007437179L;
+
+	//发布人姓名
+	private String fbrxm;
+	
+	//布控人姓名
+	private String bkrxm;
+	
+	//身份证号
+	private String sfzh;
+	
+	//布控原因
+	private String bkyy;
+	
+	//开始时间
+	private String startTime;
+	
+	//截止时间
+	private String endTime;
+	
+	//活动类型
+	private String hdlx;
+
+	
+	public String getFbrxm() {
+		return fbrxm;
+	}
+
+	public void setFbrxm(String fbrxm) {
+		this.fbrxm = fbrxm;
+	}
+
+	public String getBkrxm() {
+		return bkrxm;
+	}
+
+	public void setBkrxm(String bkrxm) {
+		this.bkrxm = bkrxm;
+	}
+
+	public String getSfzh() {
+		return sfzh;
+	}
+
+	public void setSfzh(String sfzh) {
+		this.sfzh = sfzh;
+	}
+
+	public String getBkyy() {
+		return bkyy;
+	}
+
+	public void setBkyy(String bkyy) {
+		this.bkyy = bkyy;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public String getHdlx() {
+		return hdlx;
+	}
+
+	public void setHdlx(String hdlx) {
+		this.hdlx = hdlx;
+	}
+
+	@Override
+	public String toString() {
+		return "BkResultListQueryDTO [fbrxm=" + fbrxm + ", bkrxm=" + bkrxm + ", sfzh=" + sfzh + ", bkyy=" + bkyy
+				+ ", startTime=" + startTime + ", endTime=" + endTime + ", hdlx=" + hdlx + "]";
+	}
+	
+	
+//	//申请人
+//	private String sqr;
+	
+//	//申请单位
+//	private String sqdw;
+	
+//	//审批状态
+//	private Integer state;
+	
+	
+	
+	
+}

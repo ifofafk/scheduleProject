@@ -1,0 +1,92 @@
+package com.zngk.common;
+
+
+/**
+ * Created by lei on 2017-02-23.
+ */
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.zngk.common.compent.Jwzjg;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class Singleton{
+
+    @Autowired
+    private static JdbcTemplate jdbcTemplate;
+    //user_yhzzglb_glb机构表中所有的用户机构信息列表
+    public static List yhjglist = null;
+    //user_jwz_pcs机构表中所有的警务站关联派出所信息列表
+    public static List gljglist = null;
+    public static String GlJgSql ="select * from user_jwz_pcs";
+    public static String YhJgSql ="select YHJGDM,YHM,YHSJDWDM,YHSJDW,YHJB,ISSTATION from user_yhzzglb_glb";
+    public static void init() {
+        Singleton.yhjglist = initList(YhJgSql);
+        Singleton.gljglist = initList(GlJgSql);
+    }
+
+
+    /**
+     * 获取在USER_JWZ_PCS和user_yhzzglb_glb表中的记录并存入gljglist
+     */
+    public static  List initList(String sql){
+
+
+        List list = jdbcTemplate.queryForList(sql);
+
+        return list;
+    }
+
+
+
+    public static List getYhjglist() {
+        return yhjglist;
+    }
+
+    public static List getGljglist() {
+        return gljglist;
+    }
+
+    /**
+     * 获取关联的警务站机构列表
+     */
+    public static List getJwzjg(List gljglist,String jgdm){
+        List jwzjglist= new ArrayList();
+        for(int i = 0;i<gljglist.size();i++){
+            Map map =(Map)gljglist.get(i);
+            //在user_jwz_pcs中查询警务站的关联派出所
+            if((jgdm.equals((String) map.get("JWZJGDM")))){
+                Jwzjg jwzjg = new Jwzjg();
+                jwzjg.setJwzjgdm((String)map.get("JWZJGDM"));
+                jwzjg.setPcsjgdm((String)map.get("PCSJGDM"));
+                jwzjg.setPcsmc((String)map.get("PCSMC"));
+                jwzjglist.add(jwzjg);
+            }
+        }
+        return jwzjglist;
+    }
+    /**
+     * 表示system管理员、市局、分局、派出所警务站用户截取机构代码后八位"00000000"、后六位"000000"、后四位"0000"
+     */
+    public static final  String  SystemStr="system";
+    public static final  String  SjglyStr="sjgly";
+    public static final  String  SjjgdmStr="00000000";
+    public static final  String  FjjgdmStr="000000";
+    public static final  String  PcsjgdmStr="0000";
+
+    /**
+     * 视频、音频、图片文件类型
+     */
+    public static final String VideoType = " and filetype in ('AVI', 'MOV', 'MP4', 'WMV', 'ASF', 'NAVI', '3GP', 'MKV', 'FLV', 'F4V', 'RMVB', 'MTS', 'RM', 'MPEG1', 'MPEG2', 'MPEG3', 'MPEG4', 'MTV', 'DMV', 'AMV','mp4','mov','avi','wmv','mp4') ";
+    public static final String AudioType = " and filetype in ('WAV', 'RAW', 'AFC', 'WMA', 'OGG', 'VOF', 'AU', 'APE', 'ACC','wav') ";
+    public static final String PictureType = " and filetype in ('BMP', 'JPG', 'TIFF', 'JPEG', 'TGA', 'FPX', 'SVG', 'CDR', 'UFO', 'PNG', 'RAW', 'HDRI', 'DNG', 'PEF', 'GIF','jpg','bmp') ";
+
+
+    /**
+     * 存储缩略图服务器IP
+     */
+    public static final String ServiceIp = "http://10.73.161.168/";
+}

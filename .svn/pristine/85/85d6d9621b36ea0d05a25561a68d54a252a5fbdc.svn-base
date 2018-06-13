@@ -1,0 +1,141 @@
+package com.zngk.controller;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.zngk.common.constant.user.UserEmun;
+import com.zngk.dto.LoginUser;
+import com.zngk.entity.ResultGson;
+import com.zngk.entity.User;
+import com.zngk.exception.ServiceException;
+import com.zngk.service.ToLogonService;
+import com.zngk.util.DataModel;
+import com.zngk.util.DesCryptUtil;
+import com.zngk.util.PubMethod;
+
+@Controller
+@RequestMapping(value="sys")
+public class LoginController {
+    
+    @Autowired
+	private ToLogonService tologonservies;
+    @Value("${time}")
+    private String time;
+    
+    @Value("${encryptionKey}")
+    private String encryptionKey; //密钥
+    
+    /**
+     * 根据账号密码登录
+     * @param request
+     * @param username  账号
+     * @param password  密码
+     * @return
+     */
+    @RequestMapping(value = "/login",method=RequestMethod.POST)
+    @ApiOperation(value="登录",httpMethod="POST",notes="账号登录",response=ResultGson.class)
+    @ResponseBody
+    public ResultGson login(HttpServletRequest request, @RequestBody LoginUser loginUser) {
+    	ResultGson result = ResultGson.ok();
+    	
+    	User userinfo =  null;
+    	String username = loginUser.getUsername();
+    	String password = loginUser.getPassword();
+    	
+    	if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+    		throw new ServiceException(UserEmun.USER_EMPTY_NAME_OR_PWD.getCode(),UserEmun.USER_EMPTY_NAME_OR_PWD.getDesc());
+    	}
+   
+    	DesCryptUtil des;
+		try {
+			des = new DesCryptUtil(encryptionKey);
+			password = des.encrypt(password);
+		} catch (Exception e) {
+			throw new ServiceException("false","系统执行错误");
+		}
+    	
+    	HttpSession httpSession = request.getSession();
+    	
+        Map<String, Object> mapinfo = tologonservies.longonPasswrod(username, password);
+        
+        //用户名密码错误,直接跳转回登录页面
+        if(mapinfo.size()==0){
+        	
+        	
+        	//判断是否是真的登录
+        	if(StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+        	
+        		tologonservies.loginLog(request, mapinfo, 1);
+        		
+        		throw new ServiceException(UserEmun.USER_ERROR_NAME_OR_PWD.getCode(),UserEmun.USER_ERROR_NAME_OR_PWD.getDesc());
+        	}
+        }else{
+        	//获取用户角色信息，并跳转到登录页面，登录成功后跳转到墙
+        	userinfo = tologonservies.serchUserinfo(mapinfo);
+        	userinfo.setIp(PubMethod.getCallerIpMe(request));
+        	httpSession.setAttribute("userinfo", userinfo);
+        	//设置默认过期时间为一小时
+        	httpSession.setMaxInactiveInterval(Integer.parseInt(time));
+        	DataModel modelData = new DataModel();
+        	modelData.setUser(userinfo);
+        	httpSession.setAttribute("modelData", modelData);
+        	tologonservies.loginLog(request, mapinfo, 1);//登录日志
+        	
+        	result.setData(userinfo);
+        }
+        return result;
+    }
+
+    /**
+     * 退出登录
+     * @param request
+     * @return
+     */
+    @RequestMapping(value = "logout",method=RequestMethod.POST)
+    @ApiOperation(value="退出登录", httpMethod="POST", notes="退出登录", response=ResultGson.class)
+    @ResponseBody
+    public ResultGson logOut(HttpServletRequest request) {
+    	ResultGson result = ResultGson.ok();
+    	
+    	HttpSession httpSession = request.getSession();
+    	
+    	// 根据session来回去登录信息
+		DataModel dataModel = (DataModel) httpSession.getAttribute("modelData");
+		//session已经失效时，因为sys全部加入了开放条件，这里手动抛异常
+		if(dataModel == null) {
+			throw new ServiceException("false","登录已退出");
+		}
+		// 查看登录人的信息
+		User user = dataModel.getUser();
+		
+		Map<String, Object> mapinfo = new HashMap<String, Object>();
+		mapinfo.put("username", user.getAccount());
+		mapinfo.put("YHXM", user.getName());
+		
+    	tologonservies.loginLog(request, mapinfo, 0);//登录日志
+    	
+    	httpSession.removeAttribute("userinfo");
+    	httpSession.removeAttribute("modelData");
+    	
+    	result.setMsg("退出登录成功!");
+    	
+    	return result;
+    }
+}
+
+
+
+
+
